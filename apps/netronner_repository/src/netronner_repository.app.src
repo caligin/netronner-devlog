@@ -1,0 +1,9 @@
+{application, netronner_repository, [
+    {description, "Repository."},
+    {vsn, "1"},
+    {registered, [netronner_repository_application, netronner_repository_supervisor, netronner_repository]},
+    {applications, [kernel, stdlib, versions]},
+	{modules, [netronner_repository_application, netronner_repository_supervisor, netronner_repository, netronner_operations]},
+    {mod, { netronner_repository_application, []}},
+    {env, []}
+]}.
