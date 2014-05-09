@@ -1,7 +1,7 @@
 <html>
 <head>
     <link rel="shortcut icon" href="favicon.ico" />
-    <link rel="stylesheet" type="text/css" href="static/css/bootstrap.min.css" >
+    <link rel="stylesheet" type="text/css" href="lib/css/bootstrap.min.css" >
     <style>
         html, body { height: 100%; }
         #wrap {
@@ -28,6 +28,8 @@
       <span class="icon-bar"></span>
       <span class="icon-bar"></span>
     </button>
+    <span class="navbar-brand">Netronner</span>
+    <span class="navbar-brand" id="location-header">Players</span>
   </div>
 </div>
 </div>
@@ -45,25 +47,26 @@
 </div>
 
 <script id="players-template" type="text/x-handlebars-template">
-    <div class="panel">
-        <div class="panel-heading">Players</div>
-    </div>    
     {{#unless this}}
-        <div class="panel">
-            <div class="panel-body">No players.</div>
-        </div>    
+    <div class="panel panel-danger">
+        <div class="panel-body">No players.</div>
+    </div>    
     {{/unless}}
     {{#each this}}
-    <div class="panel">
+    <div class="panel panel-success">
         <div class="panel-heading">{{name}}</div>
         <div class="panel-body">
-            <img src="{{desc}}" />
-        </div>
-        <div class="panel-footer">
+        {{#each achis}}
+            <div class="btn-group">
+              <a href="#achis" class="btn btn-info btn-sm">{{this}}</a>
+            </div>
+        {{/each}}
+
         </div>
     </div>
     {{/each}}    
 </script>
+
 <script id="failure-template" type="text/x-handlebars-template">
   <div class="panel panel-danger">
     <div class="panel-heading">An error occurred</div>
@@ -78,15 +81,32 @@
   </div>
 </script>
 
-<script src="static/js/jquery-2.0.3.min.js"></script>    
-<script src="static/js/handlebars-v1.1.2.js"></script>
-<script src="static/js/bootstrap.min.js"></script>
+<script id="achis-template" type="text/x-handlebars-template">
+    {{#unless this}}
+    <div class="panel panel-danger">
+        <div class="panel-body">No achis.</div>
+    </div>    
+    {{/unless}}
+    {{#each this}}
+    <div class="panel panel-info">
+        <div class="panel-heading">{{name}}</div>
+        <div class="panel-body">
+        {{description}}
+        </div>
+    </div>
+    {{/each}}    
+</script>
+
+<script src="lib/jquery-2.0.3.min.js"></script>    
+<script src="lib/handlebars-v1.3.0.js"></script>
+<script src="lib/js/bootstrap.min.js"></script>
 <script>
 
 function netronner(){
     this.templates = {}
     this.data = {}
     this.templates.players = Handlebars.compile($("#players-template").html())
+    this.templates.achis = Handlebars.compile($("#achis-template").html())
     this.templates.failure = Handlebars.compile($("#failure-template").html())
 }
 
@@ -106,19 +126,73 @@ netronner.prototype.result = function(content){
 }
 
 netronner.prototype.players = function(){
-    var self = this;
-    $.getJSON( "api/player/list", {}, function( players ) {
-        self.data.players = players;
-        self.result(self.templates.players(players));
-    }).fail(this.failure.bind(this));
+  $("#location-header").text("Players")
+    this.data.players =[{
+        name: "Foo",
+        achis: ["Fanpaistic!", "Kan I win?", "Delusions of victory", "Crash course", "Vulgar display of power", "To the top! (Rank 1)"]
+    },{
+      name: "Dani",
+      achis: ["hell wait", "Die hard", "Bowling alley"] 
+    },{
+      name: "Simo",
+      achis: ["Four o' four", "To the top! (Rank 1)", "Delusions of victory"] 
+    },{
+      name: "Angeru",
+      achis: ["Ragequit", "Vulgar display of power", "To the top! (Rank 3)"] 
+    },{
+      name: "Mike",
+      achis: ["Seventh son of a seventh tile"] 
+    },{
+      name: "Mik",
+      achis: ["Little mermaid"] 
+    },{
+      name: "Bidi",
+      achis: []
+    },{
+      name: "Pelo",
+      achis: [] 
+    },{
+      name: "Mary",
+      achis: ["Vulgar display of power"]
+    },{
+      name: "Marty",
+      achis: ["Seventh son of a seventh tile"] 
+    },{
+       name: "Taz",
+      achis: ["Adoptive parent", "Die hard"]
+    }];
+    this.result(this.templates.players(this.data.players));
+    location.hash="#players";
+}
+
+netronner.prototype.renderHash = function(_newHash){
+  if(location.hash && location.hash !== "#"){
+    var templateName = location.hash.slice(1);
+    if(typeof netronner.prototype[templateName] === "function"){
+      netronner.prototype[templateName].call(this);
+    }
+  }
+}
+
+netronner.prototype.achis = function(){
+  $("#location-header").text("Achis")
+  this.data.achis = [{"name":"If you can't beat em....","description":"deal-in to avoid someone else winning","category":"boh"},{"name":"I have an encoding problem! ","description":"win with a hand composed entirely of pairs/pons/kans of characters and white dragons, then declare BEGINNING OF COSMOS!","category":""},{"name":"Tiles are red, violets are blue... ","description":"win with all three aka doras and all four red dragons","category":""},{"name":"dragon trainer ","description":"win with little three dragons","category":""},{"name":"mother of dragons ","description":"win with big three dragons","category":""},{"name":"all green! ","description":"win with the green hand","category":""},{"name":"Literate ","description":"win with an all-characters hand","category":""},{"name":"Bowling alley ","description":"win with an all-circles hand","category":""},{"name":"A walk in the woods ","description":"win with an all-bamboos hand","category":""},{"name":"last airbender ","description":"win with little four winds","category":""},{"name":"in the eye of the storm ","description":"win with big four winds","category":""},{"name":"pick a seaweed from the bottom of the ocean ","description":"win with haitei+rinshan kaihou","category":""},{"name":"one shot one kill ","description":"oneshot an opponent that had 25000+ points at the beginning of the match with a direct hit","category":""},{"name":"player killer ","description":"reduce an opponent's points below zero with a direct hit","category":""},{"name":"shot on the crowd ","description":"reduce an opponent's points below zero with a tsumo","category":""},{"name":"grenadier ","description":"reduce two opponent's points below zero with a single tsumo","category":""},{"name":"nuke from orbit ","description":"reduce three opponent's points below zero with a single tsumo","category":""},{"name":"o hai, I'm in tenpai! ","description":"declare a double riichi","category":""},{"name":"I run an orphanage ","description":"win with thirteen orphans on a thirteen-sided wait","category":""},{"name":"Save the children from the bad guys ","description":"win with thirteen orphans robbing a closed kan","category":""},{"name":"I'm on fire! ","description":"stay east for 5 consecutive bonus hands","category":""},{"name":"8th wonder ","description":"win a bonus hand with 8+ honba","category":""},{"name":"Against a common enemy ","description":"participate in a double-ron","category":""},{"name":"oath of allegiance ","description":"participate in a triple-ron","category":""},{"name":"can't hold all these doras ","description":"win a hand with 6+/9+/12+ doras (rank 1/2/3)","category":""},{"name":"Hell wait ","description":"win a hand with a 1-out wait","category":""},{"name":"blitzkrieg ","description":"win a hand with double riichi + ippatsu","category":""},{"name":"god called on the phone .. ","description":"win with god's hand","category":""},{"name":"vulgar display of power ","description":"take precedence of a chi/pon declaration with a pon/ron declaration","category":""},{"name":"adoptive parent ","description":"win with thirteen orphans","category":""},{"name":"they see me ronning, they hatin'  ","description":" declare three consecutive rons from three different players","category":""},{"name":"fanpaistic! ","description":"call a fanpai pon at the first round","category":""},{"name":"To the Top ","description":"finish a game with 50-60-70-80-90k points (ranks 1-5)","category":""},{"name":"Out of reach ","description":"call a ron on the riichi declaration tile of another player","category":""},{"name":"unriichiable ","description":"declare a riichi when you see all your outs among the discards/melds","category":""},{"name":"siberian express ","description":"win with a pin 9-gates. you must shout SIBERIAN EXPRESS in epic pose","category":""},{"name":"Crash course ","description":"force an abortive draw declaring the fourth riichi","category":""},{"name":"Four o' four ","description":" force an abortive draw by calling the fourth kan ","category":""},{"name":"Unlucky fourth object ","description":"force a draw by discarding the fourth same wind in the first round","category":""},{"name":"disconnected ","description":"open an initial hand with no pairs nor contiguous tiles (brotip: take a screenshot of the hand to claim the achi and keep on playing)","category":""},{"name":"nine etched fails ","description":"force an abortive draw by having 9+ different orphans on the opening hand","category":""},{"name":"Die Hard ","description":"finish a game with less than 1k points","category":""},{"name":"invisible","description":"terminate a full game (east-south match) without any of your tiles being called","category":""},{"name":"lack of presence ","description":"terminate a complete wind round without any of your tiles being called","category":""},{"name":"superman ","description":"terminate a game without losing a single point","category":""},{"name":" it is (not) alone","description":"win on a pair wait on the last closed tile in your hand","category":""},{"name":"ping pon ","description":"have two players call four consecutive pons from each other (awarded to both)","category":""},{"name":"deja vu ","description":"call twice the same chi","category":""},{"name":"han solo ","description":"win waiting for a 1-out character tile","category":""},{"name":"keep it simple ","description":"score a pinfu","category":""},{"name":"seventh son of a seventh tile ","description":"score a seven pairs","category":""},{"name":"pinterest ","description":"call 4+ pin tiles from your opponents in a single game","category":""},{"name":"Little mermaid ","description":"score a heitei","category":""},{"name":"delusions of victory","description":"declare a false Ron and suffer a chombo penalty for it","category":""},{"name":"kan I win? ","description":"score a rinshan kaihou","category":""},{"name":"No pain, no gain","description":"terminate a full game (east-south match) with a result of +-0","category":""}]
+  this.result(this.templates.achis(this.data.achis));
+    location.hash="#achis";
 }
 
 var ron = null;
 
 $(document).ready(function(){
     ron = new netronner();
-    ron.players();
+    if(location.hash && location.hash !== "#"){
+        ron.renderHash()
+    } else {
+        ron.players();
+    }
+    window.onhashchange = ron.renderHash.bind(ron);
 })
+
 
 </script>
 
