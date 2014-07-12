@@ -5,8 +5,9 @@
 
 
 
-init(_Type, Req, [Endpoint]) ->
-    {ok, Req, Endpoint}.
+init(_Type, Req, [Feature, Action]) ->
+    {Method, _} = cowboy_req:method(Req),
+    {ok, Req, {Feature, Action, Method}}.
 
 handle(Req, {players, <<"GET">>}) ->
     Response = [
