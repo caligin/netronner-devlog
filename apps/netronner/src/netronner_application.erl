@@ -12,8 +12,8 @@ start(_StartType, _StartArgs) ->
     Dispatcher = cowboy_router:compile([
         {'_', [
             {"/api/players", netronner_handler_json, [players, list]},
+            {"/api/players/award_achievement", netronner_handler_json, [players, award_achievement]},
             {"/api/achievements", netronner_handler_json, [achievements, list_or_set]},
-            {"/api/achievements/award", netronner_handler_json, [achievements, award]},
             {"/static/[...]", cowboy_static, {dir, code:priv_dir(netronner) ++ "/static" }},
             {"/", cowboy_static,  {file, code:priv_dir(netronner) ++ "/static/index.html"}}
         ]}
