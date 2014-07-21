@@ -5,7 +5,7 @@
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
 -export([start_link/0]).
 
--type player() :: #{ name => binary(), icon => binary(), achievements => [achievement()]}.
+-type player() :: #{ name => binary(), icon => binary(), achievements => [achievements:achievement()]}.
 -export_type([player/0]).
 
 % -----------------------------------------------------------------------------
@@ -21,7 +21,7 @@ list() ->
     gen_server:call(?MODULE, {list}).
 
 % -----------------------------------------------------------------------------
--spec put(player()) -> ok.
+-spec add(player()) -> ok.
 % -----------------------------------------------------------------------------
 add(Player) ->
     gen_server:call(?MODULE, {add, Player}).
@@ -30,7 +30,7 @@ add(Player) ->
 -spec award_achievement(PlayerName::binary(), AchievementName::binary()) -> ok.
 % -----------------------------------------------------------------------------
 award_achievement(PlayerName, AchievementName) ->
-    gen_server:call(?MODULE, {award_achievement, Player, Achievement }).
+    gen_server:call(?MODULE, {award_achievement, PlayerName, AchievementName }).
 
 
 init([]) ->

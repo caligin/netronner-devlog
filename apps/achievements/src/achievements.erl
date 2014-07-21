@@ -1,12 +1,11 @@
 -module(achievements).
 
 -behaviour(gen_server).
--export([list/0, put/1, award/2]).
+-export([list/0, set/1, load/1]).
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
 -export([start_link/0]).
 
 -type achievement() :: #{ name => binary(), description => binary(), icon => binary()}.
--type achievements() :: #{ binary() => achievement()}.
 -export_type([achievement/0]).
 
 % -----------------------------------------------------------------------------
@@ -16,34 +15,38 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 % -----------------------------------------------------------------------------
--spec list() -> [achievements()].
+-spec list() -> [achievement()].
 % -----------------------------------------------------------------------------
 list() ->
     gen_server:call(?MODULE, {list}).
 
 % -----------------------------------------------------------------------------
--spec put([achievement()]) -> ok.
+-spec set([achievement()]) -> ok.
 % -----------------------------------------------------------------------------
-put(Achis) ->
-    gen_server:call(?MODULE, {put, Achis}).
+set(Achis) ->
+    gen_server:call(?MODULE, {set, Achis}).
 
 % -----------------------------------------------------------------------------
--spec award([achievement()]) -> ok.
+-spec load(AchievementName::binary()) -> {ok, achievement()} | notfound.
 % -----------------------------------------------------------------------------
-put(Achis) ->
-    gen_server:call(?MODULE, {put, Achis}).
-
+load(AchievementName) ->
+    gen_server:call(?MODULE, {load, AchievementName}).
 
 init([]) ->
-    {ok, netronner_driver:new()}.
+    {ok, new_state()}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_call({list}, From, State) ->
-    async_(From, State, fun() -> netronner_operations:list(State) end);
-handle_call({find_player, Name}, From, State) ->
-    async_(From, State, fun() -> netronner_operations:find_player(State, Name) end);
+handle_call({list}, _From, State) ->
+    Achievements = list(State),
+    {reply, Achievements, State};
+handle_call({set, Achievements}, _From, State) ->
+    {ok, NewState} = set(State, Achievements),
+    {reply, ok, NewState};
+handle_call({load, AchievementName}, _From, State) ->
+    Result = load(State, AchievementName),
+    {reply, Result, State};
 handle_call(_Msg, _From, State) ->
     {reply, {error, badreqeust}, State}.
 
@@ -56,4 +59,20 @@ code_change(_OldVsn, State, _Extra) ->
 terminate(_Reason, _State) ->
     ok.
 
-async_(To, State, Fun) -> spawn(fun() -> gen_server:reply(To, Fun()) end), {noreply, State}.
+
+new_state() ->
+    #{}.
+
+list(State) ->
+    maps:values(State).
+
+set(State, NewAchievements) ->
+    %% TODO: validation
+    NewState = maps:from_list(lists:map(fun(Achievement) -> {maps:get(name, Achievement), Achievement} end, NewAchievements)),
+    {ok, NewState}.
+
+load(State, AchievementName) ->
+    case maps:find(AchievementName, State) of
+        {ok, Achievement} -> {ok, Achievement};
+        error -> notfound
+    end.
