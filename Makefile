@@ -45,35 +45,35 @@ all: deps compile dialyzer test release
 # =============================================================================
 
 deps:
-    $(REBAR) get-deps
-    $(REBAR) compile
+	$(REBAR) get-deps
+	$(REBAR) compile
 
 update-deps:
-    $(REBAR) update-deps
-    $(REBAR) compile
+	$(REBAR) update-deps
+	$(REBAR) compile
 
 compile:
-    $(REBAR) skip_deps=true compile
+	$(REBAR) skip_deps=true compile
 
 doc:
-    $(REBAR) skip_deps=true doc
+	$(REBAR) skip_deps=true doc
 
 eunit: compile clean-common-test-data
-    $(REBAR) skip_deps=true eunit
+	$(REBAR) skip_deps=true eunit
 
 test: compile eunit
 
 $(DEPS_PLT):
-    @echo Building local plt at $(DEPS_PLT)
-    @echo
-    dialyzer --output_plt $(DEPS_PLT) --build_plt \
-       --apps $(DEPS) -r deps
+	@echo Building local plt at $(DEPS_PLT)
+	@echo
+	dialyzer --output_plt $(DEPS_PLT) --build_plt \
+	   --apps $(DEPS) -r deps
 
 dialyzer: $(DEPS_PLT)
-    dialyzer --fullpath --plt $(DEPS_PLT) -Wrace_conditions -r apps/*/ebin
+	dialyzer --fullpath --plt $(DEPS_PLT) -Wrace_conditions -r apps/*/ebin
 
 typer:
-    typer --plt $(DEPS_PLT) -r apps/*/src
+	typer --plt $(DEPS_PLT) -r apps/*/src
 
 shell: deps compile
 # You often want *rebuilt* rebar tests to be available to the
@@ -81,31 +81,31 @@ shell: deps compile
 # rebuilt). However, eunit runs the tests, which probably
 # fails (thats probably why You want them in the shell). This
 # runs eunit but tells make to ignore the result.
-    - @$(REBAR) skip_deps=true eunit
-    @$(ERL) $(ERLFLAGS)
+	- @$(REBAR) skip_deps=true eunit
+	@$(ERL) $(ERLFLAGS)
 
 pdf:
-    pandoc README.md -o README.pdf
+	pandoc README.md -o README.pdf
 
 clean:
-    - rm -rf $(CURDIR)/test/*.beam
-    - rm -rf $(CURDIR)/logs
-    - rm -rf $(CURDIR)/apps/*/ebin
-    - rm -rf $(CURDIR)/apps/*/src/*.beam
-    $(REBAR) skip_deps=true clean
+	- rm -rf $(CURDIR)/test/*.beam
+	- rm -rf $(CURDIR)/logs
+	- rm -rf $(CURDIR)/apps/*/ebin
+	- rm -rf $(CURDIR)/apps/*/src/*.beam
+	$(REBAR) skip_deps=true clean
 
 distclean: clean
-    - rm -rf $(DEPS_PLT)
-    - rm -rvf $(CURDIR)/deps
+	- rm -rf $(DEPS_PLT)
+	- rm -rvf $(CURDIR)/deps
 
 rebuild: distclean deps compile escript dialyzer test
 
 
 release:
-    $(REBAR) generate   
+	$(REBAR) generate   
 tarball: release
-    @cd rel; tar cvfz netronner.tar.gz netronner_node
+	@cd rel; tar cvfz netronner.tar.gz netronner_node
 start:
-    rel/$(NODE)/bin/$(NODE) start
+	rel/$(NODE)/bin/$(NODE) start
 console:
-    rel/${NODE}/bin/${NODE} console ${ARGS}
+	rel/${NODE}/bin/${NODE} console ${ARGS}
