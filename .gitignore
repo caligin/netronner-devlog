@@ -1,6 +1,10 @@
 .eunit
+.rebar
+.deps_plt
 deps
 *.o
 *.beam
+*.app
 *.plt
 erl_crash.dump
+rel/netronner_node
