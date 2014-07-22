@@ -2,6 +2,7 @@
 
 -behaviour(gen_server).
 -export([list/0, set/1, load/1]).
+-export([from_json/1]).
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
 -export([start_link/0]).
 
@@ -31,6 +32,22 @@ set(Achis) ->
 % -----------------------------------------------------------------------------
 load(AchievementName) ->
     gen_server:call(?MODULE, {load, AchievementName}).
+
+% -----------------------------------------------------------------------------
+-spec from_json(JsonAchievements::binary()) -> [achievement()].
+% -----------------------------------------------------------------------------
+from_json(JsonAchievements) ->
+    BinaryAchis = jiffy:decode(JsonAchievements, [return_maps]),
+    decoded_to_achievements(BinaryAchis, []).
+
+decoded_to_achievements([BinaryAchievement | Others], Converted) ->
+    Name = maps:get(<<"name">>, BinaryAchievement),
+    Description = maps:get(<<"description">>, BinaryAchievement),
+    Icon = maps:get(<<"icon">>, BinaryAchievement),
+    Achievement = #{ name => Name, description => Description, icon => Icon},
+    decoded_to_achievements(Others, [Achievement | Converted]);
+decoded_to_achievements([], Converted) ->
+    Converted.
 
 init([]) ->
     {ok, new_state()}.
