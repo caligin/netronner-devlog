@@ -2,12 +2,11 @@
     {description, "NetRonner"},
     {vsn, "1"},
     {registered, []},
-    {applications, [ kernel, stdlib, crypto, public_key, ssl, cowboy, jiffy, inets, players, achievements ]},
+    {applications, [ kernel, stdlib, crypto, public_key, ssl, cowboy, jiffy, players, achievements ]},
     {mod, { netronner_application, []}},
     {modules, [
         netronner_application, 
-        netronner_handler_json,
-        gauth
+        netronner_handler_json
     ]},
     {env, []}
  ]}.

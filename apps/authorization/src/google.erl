@@ -1,9 +1,20 @@
--module(gauth).
-%% TODO make this a full-fledged application with a gen server and some caching of already seen tokens.
--export([validate_access_token/2, user_profile/1]).
+-module(google).
+-behaviour(gen_auth).
 
--type user() :: #{ id => binary(), displayName => binary(), image_url => binary()}.
--export_type([user/0]).
+%% TODO make this a full-fledged application with a gen server and some caching of already seen tokens.
+-export([is_authorized/1, principal/1]).
+
+is_authorized(Req) ->
+    { <<"Bearer ", AccessToken/binary>>, Req2} = cowboy_req:header(<<"authorization">>, Req), %% FIXME this bombs on a malformed token, want to return 401...
+    {ok, <<ClientId/binary>>} = application:get_env(google_api_client_id),
+    case validate_access_token(AccessToken, ClientId) of
+        ok -> true;
+        error -> {error, 401, [{<<"WWW-Authenticate">>, <<"Bearer error=\"invalid_token\"">>}]}
+    end.
+
+principal(Req) ->
+    { <<"Bearer ", AccessToken/binary>>, _} = cowboy_req:header(<<"authorization">>, Req),
+    user_profile(AccessToken).
 
 %% TODO consider using the key <<"expires_in">> => 3470 for caching control
 -spec validate_access_token(AccessToken::binary(), ClientId::binary()) -> ok | error.
@@ -23,7 +34,7 @@ check_token_ownership(BinaryTokenInfo, ClientId) ->
         false -> error
     end.
 
--spec user_profile(AccessToken::binary()) -> user().
+-spec user_profile(AccessToken::binary()) -> gen_auth:principal().
 user_profile(AccessToken) ->
     {ok, Response} = httpc:request("https://www.googleapis.com/plus/v1/people/me?access_token=" ++ binary_to_list(AccessToken)),
     {{ _ProtoVersion, 200, _StatusMessage }, _Headers, Body} = Response,
@@ -31,7 +42,7 @@ user_profile(AccessToken) ->
     to_user(DecodedUserProfile).
 
 %% TODO might want to trim the ?sz=50 appended at the end of image url to use different sizes...
--spec to_user(#{binary() => term()}) -> user().
+-spec to_user(#{binary() => term()}) -> gen_auth:principal().
 to_user(Decoded) ->
     #{
         id => maps:get(<<"id">>, Decoded),
