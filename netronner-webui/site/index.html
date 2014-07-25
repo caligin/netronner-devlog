@@ -1,7 +1,7 @@
 <html>
 <head>
     <link rel="shortcut icon" href="favicon.ico" />
-    <link rel="stylesheet" type="text/css" href="static/lib/css/bootstrap.min.css" >
+    <link rel="stylesheet" type="text/css" href="lib/css/bootstrap.min.css" >
     <style>
         html, body { height: 100%; }
         #wrap {
@@ -64,7 +64,7 @@
       <span
         class="g-signin"
         data-callback="signinCallback"
-        data-clientid="ID HERE"
+        data-clientid="@@google.client.id@@"
         data-cookiepolicy="single_host_origin"
         data-scope="profile">
       </span>
@@ -136,14 +136,16 @@
     {{/each}}    
 </script>
 
-<script src="static/lib/jquery-2.0.3.min.js"></script>    
-<script src="static/lib/handlebars-v1.3.0.js"></script>
-<script src="static/lib/js/bootstrap.min.js"></script>
+<script src="lib/jquery-2.0.3.min.js"></script>    
+<script src="lib/handlebars-v1.3.0.js"></script>
+<script src="lib/js/bootstrap.min.js"></script>
 <script>
 
 function netronner(){
     this.templates = {}
     this.data = {}
+    this.webapi = {}
+    this.webapi.url = "@@netronner.webapi.url@@"
     this.templates.players = Handlebars.compile($("#players-template").html())
     this.templates.achis = Handlebars.compile($("#achis-template").html())
     this.templates.failure = Handlebars.compile($("#failure-template").html())
