@@ -13,10 +13,7 @@ start(_StartType, _StartArgs) ->
         {'_', [
             {"/api/players", netronner_handler_json, [players, list]},
             {"/api/players/award_achievement", netronner_handler_json, [players, award_achievement]},
-            {"/api/achievements", netronner_handler_json, [achievements, list_or_set]},
-            %% TODO: nuke
-            {"/static/[...]", cowboy_static, {dir, code:priv_dir(netronner) ++ "/static" }},
-            {"/", cowboy_static,  {file, code:priv_dir(netronner) ++ "/static/index.html"}}
+            {"/api/achievements", netronner_handler_json, [achievements, list_or_set]}
         ]}
     ]),
     start_cowboy(Protocol, Port, Acceptors, Dispatcher).
