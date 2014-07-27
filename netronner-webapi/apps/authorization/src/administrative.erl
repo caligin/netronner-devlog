@@ -11,4 +11,4 @@ is_authorized(Req) ->
     end.
 
 principal(_Req) ->
-    gen_auth:make_principal(<<"noid">>, <<"Administrator">>, <<"">>).
+    principal:make(<<"noid">>, <<"Administrator">>, <<"">>).

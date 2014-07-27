@@ -39,15 +39,14 @@ user_profile(AccessToken) ->
     {ok, Response} = httpc:request("https://www.googleapis.com/plus/v1/people/me?access_token=" ++ binary_to_list(AccessToken)),
     {{ _ProtoVersion, 200, _StatusMessage }, _Headers, Body} = Response,
     DecodedUserProfile = jiffy:decode(Body, [return_maps]),
-    to_user(DecodedUserProfile).
+    to_principal(DecodedUserProfile).
 
 %% TODO might want to trim the ?sz=50 appended at the end of image url to use different sizes...
--spec to_user(#{binary() => term()}) -> gen_auth:principal().
+-spec to_principal(#{binary() => term()}) -> principal:principal().
 to_user(Decoded) ->
-    #{
-        id => maps:get(<<"id">>, Decoded),
-        displayName => maps:get(<<"displayName">>, Decoded),
-        image_url => maps:get(<<"url">>, maps:get(<<"image">>, Decoded))
-    }.
+    Id = maps:get(<<"id">>, Decoded),
+    Name = maps:get(<<"displayName">>, Decoded),
+    Image = maps:get(<<"url">>, maps:get(<<"image">>, Decoded)),
+    principal:make(Id, Name, Image).
 
 
