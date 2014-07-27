@@ -17,9 +17,9 @@ handle(Req, {players, award_achievement, <<"POST">>}) ->
     case gen_auth:is_authorized(google, Req) of
         ok -> 
             {ok, RequestParams, Req2} = cowboy_req:body_qs(Req),
-            {_, PlayerName} = lists:keyfind(<<"player">>, 1, RequestParams),
+            {PlayerId, _} = cowboy_req:binding(player_id, Req),
             {_, AchievementName} = lists:keyfind(<<"achievement">>, 1, RequestParams),
-            ok = players:award_achievement(PlayerName, AchievementName),
+            ok = players:award_achievement(PlayerId, AchievementName),
             {ok, Req3} = cowboy_req:reply(201, ?HEADERS, Req2),
             {ok, Req3, undefined};
         {error, StatusCode, Headers} ->
@@ -33,7 +33,7 @@ handle(Req, {players, login, <<"POST">>}) ->
             Id = principal:id(Principal),
             Name = principal:name(Principal),
             IconUrl = principal:image_url(Principal),
-            ok = players:add(players:new_player(Id, Name, IconUrl)),
+            ok = players:add(player:make(Id, Name, IconUrl)),
             {ok, Req2} = cowboy_req:reply(201, ?HEADERS, Req),
             {ok, Req2, undefined};
         {error, StatusCode, Headers} ->

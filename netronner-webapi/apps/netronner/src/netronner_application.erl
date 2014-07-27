@@ -13,7 +13,7 @@ start(_StartType, _StartArgs) ->
         {'_', [
             {"/api/players", netronner_handler_json, [players, list]},
             {"/api/players/login", netronner_handler_json, [players, login]},
-            {"/api/players/award_achievement", netronner_handler_json, [players, award_achievement]},
+            {"/api/players/:player_id/award_achievement", netronner_handler_json, [players, award_achievement]},
             {"/api/achievements", netronner_handler_json, [achievements, list_or_set]}
         ]}
     ]),
