@@ -34,11 +34,11 @@ handle(Req, {players, login, <<"POST">>}) ->
             Name = principal:name(Principal),
             IconUrl = principal:image_url(Principal),
             ok = players:add(players:new_player(Id, Name, IconUrl)),
-            {ok, Req3} = cowboy_req:reply(201, ?HEADERS, Req2),
-            {ok, Req3, undefined};
+            {ok, Req2} = cowboy_req:reply(201, ?HEADERS, Req),
+            {ok, Req2, undefined};
         {error, StatusCode, Headers} ->
-            {ok, Req4} = cowboy_req:reply(StatusCode, Headers, Req),
-            {ok, Req4, undefined}
+            {ok, Req3} = cowboy_req:reply(StatusCode, Headers, Req),
+            {ok, Req3, undefined}
         end;
 handle(Req, {achievements, list_or_set, <<"GET">>}) ->
     Achievements = achievements:list(),

@@ -83,7 +83,7 @@ new_state() ->
 list(State) ->
     maps:values(State).
 
-set(State, NewAchievements) ->
+set(_State, NewAchievements) ->
     %% TODO: validation
     NewState = maps:from_list(lists:map(fun(Achievement) -> {maps:get(name, Achievement), Achievement} end, NewAchievements)),
     {ok, NewState}.
