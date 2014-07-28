@@ -11,4 +11,4 @@ is_authorized(Req) ->
     end.
 
 principal(_Req) ->
-    principal:make(<<"noid">>, <<"Administrator">>, <<"">>).
+    principal:make(<<"noid">>, <<"Administrator">>).

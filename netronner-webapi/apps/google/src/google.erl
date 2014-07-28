@@ -1,6 +1,6 @@
 -module(google).
 -export([user_id/1, user_name/1, user_image_url/1, user_decode/1]).
--export([access_token_make/1, api_key_make/1, typeof/1, token_value/1, to_qs/1]).
+-export([access_token_make/1, api_key_make/1, typeof/1, token_value/1, token_to_qs/1]).
 -export([validate_access_token/2, user_profile/2]).
 
 -type user() :: #{ id => binary(), displayName => binary(), image_url => binary()}.
@@ -60,10 +60,10 @@ typeof({Type, _}) ->
 token_value({_, Value}) ->
     Value.
 
--spec to_qs(token()) -> binary().
-to_qs({access_token, Value}) ->
+-spec token_to_qs(token()) -> binary().
+token_to_qs({access_token, Value}) ->
     <<"access_token=", Value/binary>>;
-to_qs({api_key, Value}) ->
+token_to_qs({api_key, Value}) ->
     <<"key=", Value/binary>>.
 
 % -----------------------------------------------------------------------------
@@ -94,13 +94,7 @@ user_profile(Token, UserId) ->
         "https://www.googleapis.com/plus/v1/people/"
         ++ binary_to_list(UserId)
         ++ "?"
-        ++ binary_to_list(to_qs(Token))),
+        ++ binary_to_list(token_to_qs(Token))),
     {{ _ProtoVersion, 200, _StatusMessage }, _Headers, Body} = Response,
     DecodedUserProfile = jiffy:decode(Body, [return_maps]),
-    toDO(DecodedUserProfile).
-
-user_profile_request({access_token, TokenValue}, UserId) ->
-    httpc:request("https://www.googleapis.com/plus/v1/people/" ++ UserId ++ "?access_token=" ++ binary_to_list(TokenValue));
-user_profile_request({api_key, KeyValue}, UserId) ->
-    httpc:request("https://www.googleapis.com/plus/v1/people/" ++ UserId ++ "?key=" ++ binary_to_list(KeyValue)).
-    
+    user_decode(DecodedUserProfile).

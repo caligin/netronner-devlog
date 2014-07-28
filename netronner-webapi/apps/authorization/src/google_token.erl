@@ -46,6 +46,6 @@ to_principal(Decoded) ->
     Id = maps:get(<<"id">>, Decoded),
     Name = maps:get(<<"displayName">>, Decoded),
     Image = maps:get(<<"url">>, maps:get(<<"image">>, Decoded)),
-    principal:make(Id, Name, Image).
+    principal:make(Id, Name).
 
 
