@@ -14,7 +14,7 @@ handle(Req, {players, list, <<"GET">>}) ->
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Players), Req),
     {ok, Req2, undefined};
 handle(Req, {players, award_achievement, <<"POST">>}) ->
-    case gen_auth:is_authorized(google, Req) of
+    case gen_auth:is_authorized(google_token, Req) of
         ok -> 
             {ok, RequestParams, Req2} = cowboy_req:body_qs(Req),
             {PlayerId, _} = cowboy_req:binding(player_id, Req),
@@ -25,20 +25,6 @@ handle(Req, {players, award_achievement, <<"POST">>}) ->
         {error, StatusCode, Headers} ->
             {ok, Req4} = cowboy_req:reply(StatusCode, Headers, Req),
             {ok, Req4, undefined}
-        end;
-handle(Req, {players, login, <<"POST">>}) ->
-    case gen_auth:is_authorized(google, Req) of
-        ok ->
-            Principal = gen_auth:principal(google, Req),
-            Id = principal:id(Principal),
-            Name = principal:name(Principal),
-            IconUrl = principal:image_url(Principal),
-            ok = players:add(player:make(Id, Name, IconUrl)),
-            {ok, Req2} = cowboy_req:reply(201, ?HEADERS, Req),
-            {ok, Req2, undefined};
-        {error, StatusCode, Headers} ->
-            {ok, Req3} = cowboy_req:reply(StatusCode, Headers, Req),
-            {ok, Req3, undefined}
         end;
 handle(Req, {achievements, list_or_set, <<"GET">>}) ->
     Achievements = achievements:list(),

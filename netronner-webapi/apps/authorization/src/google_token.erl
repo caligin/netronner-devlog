@@ -41,7 +41,6 @@ user_profile(AccessToken) ->
     DecodedUserProfile = jiffy:decode(Body, [return_maps]),
     to_principal(DecodedUserProfile).
 
-%% TODO might want to trim the ?sz=50 appended at the end of image url to use different sizes...
 -spec to_principal(#{binary() => term()}) -> principal:principal().
 to_principal(Decoded) ->
     Id = maps:get(<<"id">>, Decoded),

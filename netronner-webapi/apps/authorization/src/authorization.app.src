@@ -2,7 +2,7 @@
     {description, "Authorization modules"},
     {vsn, "1"},
     {applications, [kernel, stdlib, inets, jiffy]},
-    {modules, [gen_auth, google, administrative, noauth, principal]},
+    {modules, [gen_auth, google_token, administrative, noauth, principal]},
     {env, [
         {google_api_client_id, <<"ID HERE">>}
     ]}
