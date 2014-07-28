@@ -1,14 +1,19 @@
 -module(google).
--export([]).
+-export([user_id/1, user_name/1, user_image_url/1, user_decode/1]).
+-export([access_token_make/1, api_key_make/1, typeof/1, token_value/1, to_qs/1]).
+-export([validate_access_token/2, user_profile/2]).
+
+-type user() :: #{ id => binary(), displayName => binary(), image_url => binary()}.
+-export_type([user/0]).
+
+-type token() :: {access_token|api_key, binary()}.
+-export_type([token/0]).
 
 % -----------------------------------------------------------------------------
 % User manipulation fns
 % -----------------------------------------------------------------------------
--type user() :: #{ id => binary(), displayName => binary(), image_url => binary()}.
--export_type([user/0]).
-
 -spec user_make(binary(), binary(), binary()) -> user().
-make(Id, DisplayName, ImageUrl) ->
+user_make(Id, DisplayName, ImageUrl) ->
     #{ 
         id => Id,
         displayName => DisplayName,
@@ -16,32 +21,29 @@ make(Id, DisplayName, ImageUrl) ->
     }.
 
 -spec user_id(user()) -> binary().
-id(User) ->
+user_id(User) ->
     maps:get(id, User).
 
 -spec user_name(user()) -> binary().
-name(User) ->
+user_name(User) ->
     maps:get(displayName, User).
 
 -spec user_image_url(user()) -> binary().
-image_url(User) ->
+user_image_url(User) ->
     maps:get(image_url, User).
 
--spec decode_user(binary()) -> user().
-decode_user(Encoded) ->
-    DecodedUser = jiffy:decode(Encoded, [return_maps]),
+-spec user_decode(binary()) -> user().
+user_decode(Encoded) ->
+    Decoded = jiffy:decode(Encoded, [return_maps]),
     Id = maps:get(<<"id">>, Decoded),
     Name = maps:get(<<"displayName">>, Decoded),
     SizedImage = maps:get(<<"url">>, maps:get(<<"image">>, Decoded)),
     [Image | _ ] = re:split(SizedImage, "\\?"),
-    make(Id, Name, Image).
+    user_make(Id, Name, Image).
 
 % -----------------------------------------------------------------------------
 % Token manipulation fns
 % -----------------------------------------------------------------------------
--type token() :: {access_token|api_key, binary()}.
--export_type([token/0]).
-
 -spec access_token_make(binary()) -> token().
 access_token_make(AccessToken) ->
     {access_token, AccessToken}.
@@ -86,7 +88,7 @@ check_token_ownership(BinaryTokenInfo, ClientId) ->
         false -> error
     end.
 
--spec user_profile(token()) -> user().
+-spec user_profile(token(), binary()) -> user().
 user_profile(Token, UserId) ->
     {ok, Response} = httpc:request(
         "https://www.googleapis.com/plus/v1/people/"

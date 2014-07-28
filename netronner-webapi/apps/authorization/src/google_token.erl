@@ -1,4 +1,4 @@
--module(google).
+-module(google_token).
 -behaviour(gen_auth).
 
 %% TODO make this a full-fledged application with a gen server and some caching of already seen tokens.

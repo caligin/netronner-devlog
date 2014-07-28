@@ -1,6 +1,6 @@
 -module(principal).
 
--export([make/3, id/1, name/1]).
+-export([make/2, id/1, name/1]).
 
 -type principal() :: #{ id => binary(), name => binary()}.
 -export_type([principal/0]).
