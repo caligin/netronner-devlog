@@ -1,9 +1,12 @@
 {application, achievements, [
     {description, "Achievements tracking feature"},
     {vsn, "1"},
-    {registered, [achievements_application, achievements_supervisor, achievements]},
+    {registered, [achievements_application, achievements_supervisor, achievements_riakc, achievements]},
     {applications, [kernel, stdlib]},
     {modules, [achievements_application, achievements_supervisor, achievements]},
     {mod, { achievements_application, []}},
-    {env, []}
+    {env, [
+        {riak_host, "127.0.0.1"},
+        {riak_port, 8087}
+    ]}
 ]}.
