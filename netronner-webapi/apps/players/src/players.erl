@@ -1,7 +1,7 @@
 -module(players).
 
 -behaviour(gen_server).
--export([list/0, add/1, award_achievement/2]).
+-export([load/1, add/1, award_achievement/2]).
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
 -export([start_link/0]).
 
@@ -11,9 +11,9 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
--spec list() -> [player:player()].
-list() ->
-    gen_server:call(?MODULE, {list}).
+-spec load(binary()) -> player:player().
+load(PlayerId) ->
+    gen_server:call(?MODULE, {load, PlayerId}).
 
 -spec add(player:player()) -> ok.
 add(Player) ->
@@ -30,8 +30,8 @@ init([]) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_call({list}, _From, State) ->
-    {reply, list(State), State};
+handle_call({load, PlayerId}, _From, State) ->
+    {reply, load(State, PlayerId), State};
 handle_call({add, Player}, _From, State) ->
     {ok, NewState} = add(State, Player),
     {reply, ok, NewState};
@@ -54,8 +54,9 @@ terminate(_Reason, _State) ->
 new_state() ->
     #{}.
 
-list(State) ->
-    maps:values(State).
+load(State, PlayerId) ->
+    {ok, Fetched} = riakc_pb_socket:get(whereis(players_riakc), ?BUCKET, PlayerId),
+    binary_to_term(riakc_obj:get_value(Fetched)).
 
 add(_State, Player) ->
     Obj = riakc_obj:new(?BUCKET, player:id(Player), term_to_binary(Player)),

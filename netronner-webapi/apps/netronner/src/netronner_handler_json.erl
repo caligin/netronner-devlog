@@ -9,9 +9,10 @@ init(_Type, Req, [Feature, Action]) ->
     {Method, _} = cowboy_req:method(Req),
     {ok, Req, {Feature, Action, Method}}.
 
-handle(Req, {players, list, <<"GET">>}) ->
-    Players = players:list(),
-    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Players), Req),
+handle(Req, {players, load, <<"GET">>}) ->
+    {PlayerId, _} = cowboy_req:binding(player_id, Req),
+    Player = players:load(PlayerId),
+    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Player), Req),
     {ok, Req2, undefined};
 handle(Req, {players, award_achievement, <<"POST">>}) ->
     case gen_auth:is_authorized(google_token, Req) of
