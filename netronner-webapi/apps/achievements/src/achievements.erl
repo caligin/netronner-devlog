@@ -4,7 +4,7 @@
 -export([list/0, set/1, load/1]).
 -export([from_json/1]).
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
--export([start_link/0, start_riakc/0]).
+-export([start_link/0]).
 
 -define(BUCKET, <<"achievements">>).
 -define(KEY, <<"achievements">>).
@@ -15,12 +15,6 @@
 -spec start_link() -> {ok,pid()} | ignore | {error, {already_started, pid()} | term()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
-
--spec start_riakc() -> {ok,pid()}.
-start_riakc() ->
-    {ok, Host} = application:get_env(riak_host),
-    {ok, Port} = application:get_env(riak_port),
-    gen_server:start_link({local, achievements_riakc}, riakc_pb_socket, [Host, Port, []], []).
 
 -spec list() -> [achievement()].
 list() ->

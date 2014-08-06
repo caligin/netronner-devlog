@@ -33,4 +33,5 @@ achievements(Player) ->
 -spec with_achievement(achievements:achievement(), player()) -> player().
 with_achievement(Achievement, Player) ->
     PlayerAchis = achievements(Player),
+    %% FIXME: duplicates?
     maps:put(achievements, [Achievement | PlayerAchis], Player).

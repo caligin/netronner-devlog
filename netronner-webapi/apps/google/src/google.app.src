@@ -3,8 +3,5 @@
     {vsn, "1"},
     {applications, [kernel, stdlib, inets, jiffy]},
     {modules, [google ]},
-    {env, [
-        {google_api_client_id, <<"ID HERE">>},
-        {google_api_key, <<"KEY HERE">>}
-    ]}
+    {env, []}
 ]}.

@@ -1,9 +1,11 @@
 {application, players, [
     {description, "Players management"},
     {vsn, "1"},
-    {registered, [players_application, players_supervisor, players]},
-    {applications, [kernel, stdlib, achievements, riakc]},
+    {registered, [players_application, players_supervisor, players, players_riakc]},
+    {applications, [kernel, stdlib, achievements, riakcw]},
     {modules, [players_application, players_supervisor, players, player]},
     {mod, { players_application, []}},
-    {env, []}
+    {env, [
+        {google_api_key, <<"KEY HERE">>}
+    ]}
 ]}.

@@ -6,9 +6,9 @@
 
 is_authorized(Req) ->
     Token = access_token_from_req(Req),
-    {ok, <<ClientId/binary>>} = application:get_env(google_api_client_id),
+    {ok, <<ClientId/binary>>} = application:get_env(authorization, google_api_client_id),
     case google:validate_access_token(Token, ClientId) of
-        ok -> true;
+        ok -> ok;
         error -> {error, 401, [{<<"WWW-Authenticate">>, <<"Bearer error=\"invalid_token\"">>}]}
     end.
 

@@ -3,7 +3,7 @@
 -export([access_token_make/1, api_key_make/1, typeof/1, token_value/1, token_to_qs/1]).
 -export([validate_access_token/2, user_profile/2]).
 
--type user() :: #{ id => binary(), displayName => binary(), image_url => binary()}.
+-type user() :: #{ id => binary(), display_name => binary(), image_url => binary()}.
 -export_type([user/0]).
 
 -type token() :: {access_token|api_key, binary()}.
@@ -16,7 +16,7 @@
 user_make(Id, DisplayName, ImageUrl) ->
     #{ 
         id => Id,
-        displayName => DisplayName,
+        display_name => DisplayName,
         image_url => ImageUrl
     }.
 
@@ -26,7 +26,7 @@ user_id(User) ->
 
 -spec user_name(user()) -> binary().
 user_name(User) ->
-    maps:get(displayName, User).
+    maps:get(display_name, User).
 
 -spec user_image_url(user()) -> binary().
 user_image_url(User) ->
@@ -96,5 +96,4 @@ user_profile(Token, UserId) ->
         ++ "?"
         ++ binary_to_list(token_to_qs(Token))),
     {{ _ProtoVersion, 200, _StatusMessage }, _Headers, Body} = Response,
-    DecodedUserProfile = jiffy:decode(Body, [return_maps]),
-    user_decode(DecodedUserProfile).
+    user_decode(Body).
