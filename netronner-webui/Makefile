@@ -1,5 +1,8 @@
 .PHONY: clean template run
 
+clean:
+	rm -rf target
+
 all: template
 
 target:
