@@ -1,4 +1,4 @@
-.PHONY: clean template
+.PHONY: clean template run
 
 all: template
 
@@ -10,3 +10,6 @@ target/site: site | target
 
 template: target/site vars.properties templatize.rb
 	ruby templatize.rb
+
+run: template
+	cd target/site && python -m SimpleHTTPServer 8888
