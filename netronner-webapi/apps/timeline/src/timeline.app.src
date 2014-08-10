@@ -1,0 +1,9 @@
+{application, timeline, [
+    {description, "Event timelines"},
+    {vsn, "1"},
+    {registered, [timeline_application, timeline_supervisor, timeline, timeline_riakc]},
+    {applications, [kernel, stdlib, riakcw]},
+    {modules, [timeline_application, timeline_supervisor, timeline]},
+    {mod, { timeline_application, []}},
+    {env, []}
+]}.

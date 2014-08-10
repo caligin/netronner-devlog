@@ -9,6 +9,11 @@ init(_Type, Req, [Feature, Action]) ->
     {Method, _} = cowboy_req:method(Req),
     {ok, Req, {Feature, Action, Method}}.
 
+handle(Req, {timeline, page, <<"GET">>}) ->
+    {Page, _} = cowboy_req:binding(page, Req),
+    Page = timeline:page_to_dto(timeline:page(Page)),
+    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Page), Req),
+    {ok, Req2, undefined};
 handle(Req, {players, load, <<"GET">>}) ->
     {PlayerId, _} = cowboy_req:binding(player_id, Req),
     Player = players:load(PlayerId),

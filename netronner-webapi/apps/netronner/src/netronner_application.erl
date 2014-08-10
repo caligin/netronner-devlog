@@ -11,6 +11,7 @@ start(_StartType, _StartArgs) ->
 
     Dispatcher = cowboy_router:compile([
         {'_', [
+            {"/api/timeline/:page", netronner_handler_json, [timeline, page]},
             {"/api/players/:player_id", netronner_handler_json, [players, load]},
             {"/api/players/:player_id/award_achievement", netronner_handler_json, [players, award_achievement]},
             {"/api/achievements", netronner_handler_json, [achievements, list_or_set]}
