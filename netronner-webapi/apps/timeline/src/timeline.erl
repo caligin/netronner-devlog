@@ -63,13 +63,13 @@ append(_State, Event) ->
     EventsNum = length(Events),
     if
         EventsNum < ?PAGE_SIZE ->
-            NewLatestVal = {Prev, [Event | Events]},
+            NewLatestVal = term_to_binary({Prev, [Event | Events]}),
             NewNumberedLatestObj = riakc_obj:new(?BUCKET, integer_to_binary(Prev + 1), NewLatestVal),
             NewLatestObj = riakc_obj:update_value(LatestObj, NewLatestVal),
             ok = riakc_pb_socket:put(whereis(timeline_riakc), NewNumberedLatestObj),
             riakc_pb_socket:put(whereis(timeline_riakc), NewLatestObj);
         true ->
-            NewLatestVal = {Prev + 1, [Event]},
+            NewLatestVal = term_to_binary({Prev + 1, [Event]}),
             NewLatestObj = riakc_obj:update_value(LatestObj, NewLatestVal),
             riakc_pb_socket:put(whereis(timeline_riakc), NewLatestObj)
     end.

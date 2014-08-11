@@ -10,8 +10,8 @@ init(_Type, Req, [Feature, Action]) ->
     {ok, Req, {Feature, Action, Method}}.
 
 handle(Req, {timeline, page, <<"GET">>}) ->
-    {Page, _} = cowboy_req:binding(page, Req),
-    Page = timeline:page_to_dto(timeline:page(Page)),
+    PageIndex = page_index_binding(Req),
+    Page = timeline:page_to_dto(timeline:page(PageIndex)),
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Page), Req),
     {ok, Req2, undefined};
 handle(Req, {players, load, <<"GET">>}) ->
@@ -55,3 +55,12 @@ handle(Req, {_, _, Method }) ->
 
 terminate(_Reason, _Req, _State) ->
     ok.
+
+
+page_index_binding(Req) ->
+    {PageIndexBin, _} = cowboy_req:binding(page, Req),
+    case PageIndexBin of
+        <<"latest">> -> latest;
+        _ -> binary_to_integer(PageIndexBin)
+    end.
+
