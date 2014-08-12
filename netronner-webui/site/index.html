@@ -11,23 +11,19 @@
         <script type="text/javascript">
             google = {};
             google.auth = {};
-            authHandler = google.auth.handler = function(authResult) {
-                console.log(authResult)
+            google.auth.handler = function(ron, authResult) {
                 if (authResult['status']['signed_in']) {
-                    document.getElementById('signinButton').setAttribute('style', 'display: none');
-                    var access_token = authResult['access_token'];
+                    var accessToken = authResult['access_token'];
                     $.ajax({
-                        url: "https://www.googleapis.com/plus/v1/people/me?access_token=" + access_token,
+                        url: "https://www.googleapis.com/plus/v1/people/me?access_token=" + accessToken,
                         success: function(data) {
-                            var usernameField = document.getElementById('username');
-                            usernameField.setAttribute('style', 'display: inline-block');
-                            usernameField.innerText = data["displayName"];
-                            var usericonField = document.getElementById('usericon');
-                            usericonField.setAttribute('style', 'display: inline-block; background-repeat:no-repeat; width:50px; height:50px; background-image: url(' + data["image"]["url"] + ')');
+                            var username = data["displayName"];
+                            var unsizedUserIcon = data["image"]["url"].replace(/\?.*$/, "");
+                            ron.logged(accessToken, username, unsizedUserIcon);
                         }
                     });
                 } else {
-                    console.log('Sign-in state: ' + authResult['error']);
+                    console.log('Sign-in failure: ' + authResult['error']);
                 }
             }
 
@@ -39,6 +35,8 @@
                 this.templates.timeline = Handlebars.compile($("#timeline-template").html())
                 this.templates.achis = Handlebars.compile($("#achis-template").html())
                 this.templates.failure = Handlebars.compile($("#failure-template").html())
+                this.templates.anon = Handlebars.compile($("#anon-template").html())
+                this.templates.logged = Handlebars.compile($("#logged-template").html())
             }
 
 
@@ -58,6 +56,10 @@
 
             netronner.prototype.result = function(content) {
                 $('#results').html(content);
+            }
+
+            netronner.prototype.user_result = function(content) {
+                $('#user_info').html(content);
             }
 
             netronner.prototype.timeline = function() {
@@ -122,15 +124,31 @@
                 location.hash = "#achis";
             }
 
+            netronner.prototype.anon = function() {
+                this.data.user = {};
+                this.user_result(this.templates.anon(this.data.user));
+            }
+
+            netronner.prototype.logged = function(accessToken, username, userIcon) {
+                this.data.user = {
+                    accessToken: accessToken,
+                    username : username,
+                    userIcon: userIcon
+                };
+                this.user_result(this.templates.logged(this.data.user));
+            }
+
             var ron = null;
 
             $(document).ready(function() {
                 ron = new netronner();
+                authHandler = google.auth.handler.bind(this, ron);
                 if (location.hash && location.hash !== "#") {
                     ron.renderHash()
                 } else {
                     ron.timeline();
                 }
+                ron.anon();
                 window.onhashchange = ron.renderHash.bind(ron);
             })
         </script>
@@ -156,22 +174,6 @@
                         <span class="navbar-brand" id="location-header">Home</span>
                     </div>
                     <div class="collapse navbar-collapse navbar-right">
-                        <span>
-                            <span id="username" style="display: none">
-                            </span>
-                            <span id="usericon" style="display: none">
-                                &nbsp;
-                            </span>
-                        </span>
-                        <span id="signinButton">
-                            <span
-                                class="g-signin"
-                                data-callback="authHandler"
-                                data-clientid="@@google.client.id@@"
-                                data-cookiepolicy="single_host_origin"
-                                data-scope="profile">
-                            </span>
-                        </span>
                     </div>
                 </div>
             </div>
@@ -182,11 +184,7 @@
                             <div class="panel-heading">
                                 <img src="resources/tilesoffury-logo-240-149.png" />
                             </div>
-                            <div class="panel-body">
-                                <img src="//lh5.googleusercontent.com/-PxavN9j2q84/AAAAAAAAAAI/AAAAAAAAAC0/i0-UdzzNsWo/s120-c/photo.jpg"
-                                     class="img-thumbnail"
-                                     style="width:70px; height:70px; margin:-40px 0 0 0" />
-                                Tsukihara Caligin
+                            <div id="user_info" class="panel-body">
                             </div>
                         </div>
                     </div>
@@ -258,16 +256,37 @@
             {{/each}}    
         </script>
 
+        <script id="anon-template" type="text/x-handlebars-template">
+            <div class="col-md-offset-2 col-md-8">
+                <span id="signinButton" >
+                    <span
+                        class="g-signin"
+                        data-callback="authHandler"
+                        data-clientid="@@google.client.id@@"
+                        data-cookiepolicy="single_host_origin"
+                        data-scope="profile">
+                    </span>
+                </span>
+            </div>
+        </script>
+
+        <script id="logged-template" type="text/x-handlebars-template">
+            <img src="{{userIcon}}?sz=70"
+                 class="img-thumbnail"
+                 style="width:70px; height:70px; margin:-40px 0 0 0" />
+            {{username}}
+        </script>
+
 
         <!-- Google+ auth -->
         <script type="text/javascript">
-                    (function() {
-                        var po = document.createElement('script');
-                        po.type = 'text/javascript';
-                        po.async = true;
-                        po.src = 'https://apis.google.com/js/client:plusone.js';
-                        var s = document.getElementsByTagName('script')[0];
-                        s.parentNode.insertBefore(po, s);
-                    })();
+            (function() {
+                var po = document.createElement('script');
+                po.type = 'text/javascript';
+                po.async = true;
+                po.src = 'https://apis.google.com/js/client:plusone.js';
+                var s = document.getElementsByTagName('script')[0];
+                s.parentNode.insertBefore(po, s);
+            })();
         </script>
     </body>
