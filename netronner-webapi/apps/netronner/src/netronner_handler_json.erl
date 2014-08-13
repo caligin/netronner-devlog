@@ -34,6 +34,7 @@ handle(Req, {players, award_achievement, <<"POST">>}) ->
         end;
 handle(Req, {achievements, list_or_set, <<"GET">>}) ->
     Achievements = achievements:list(),
+    %% FIXME: achievements here might be in a "bad form" to be jsonized
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Achievements), Req),
     {ok, Req2, undefined};
 handle(Req, {achievements, list_or_set, <<"PUT">>}) ->

@@ -3,7 +3,7 @@
     {vsn, "1"},
     {registered, [achievements_application, achievements_supervisor, achievements_riakc, achievements]},
     {applications, [kernel, stdlib, riakcw]},
-    {modules, [achievements_application, achievements_supervisor, achievements]},
+    {modules, [achievements_application, achievements_supervisor, achievement, achievements]},
     {mod, { achievements_application, []}},
     {env, []}
 ]}.
