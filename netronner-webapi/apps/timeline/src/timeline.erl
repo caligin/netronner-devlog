@@ -64,18 +64,30 @@ append(_State, Event) ->
     if
         EventsNum < ?PAGE_SIZE ->
             NewLatestVal = term_to_binary({Prev, [Event | Events]}),
-            NewNumberedLatestObj = riakc_obj:new(?BUCKET, integer_to_binary(Prev + 1), NewLatestVal),
+            NewNumberedLatestObj = riakc_obj:new(?BUCKET, integer_to_binary(next_prev(Prev)), NewLatestVal),
             NewLatestObj = riakc_obj:update_value(LatestObj, NewLatestVal),
             ok = riakc_pb_socket:put(whereis(timeline_riakc), NewNumberedLatestObj),
-            riakc_pb_socket:put(whereis(timeline_riakc), NewLatestObj);
+            ok = riakc_pb_socket:put(whereis(timeline_riakc), NewLatestObj),
+            ok;
         true ->
-            NewLatestVal = term_to_binary({Prev + 1, [Event]}),
+            NewLatestVal = term_to_binary({next_prev(Prev), [Event]}),
             NewLatestObj = riakc_obj:update_value(LatestObj, NewLatestVal),
-            riakc_pb_socket:put(whereis(timeline_riakc), NewLatestObj)
+            ok = riakc_pb_socket:put(whereis(timeline_riakc), NewLatestObj),
+            ok
     end.
 
-page(_State, PageIndex) ->
-    {ok, Fetched} = riakc_pb_socket:get(whereis(timeline_riakc), ?BUCKET, term_to_binary(PageIndex)),
+next_prev(none) ->
+    1;
+next_prev(Prev) ->
+    Prev + 1.
+
+page(_State, latest) ->
+    {ok, Fetched} = riakc_pb_socket:get(whereis(timeline_riakc), ?BUCKET, ?LATEST),
+    binary_to_term(riakc_obj:get_value(Fetched));
+page(_State, none) ->
+    throw(notfound);
+page(_State, PageIndex) when is_integer(PageIndex) ->
+    {ok, Fetched} = riakc_pb_socket:get(whereis(timeline_riakc), ?BUCKET, integer_to_binary(PageIndex)),
     binary_to_term(riakc_obj:get_value(Fetched)).
 
 -spec fetch_or_make_latest() -> riakc_obj:riakc_obj().
@@ -84,5 +96,7 @@ fetch_or_make_latest() ->
         {ok, Latest} -> Latest;
         {error,notfound} -> 
             EmptyLatest = {none, []},
-            riakc_obj:new(?BUCKET, ?LATEST, term_to_binary(EmptyLatest))
+            EmptyLatestLocal = riakc_obj:new(?BUCKET, ?LATEST, term_to_binary(EmptyLatest)),
+            {ok, EmptyLatestObj} = riakc_pb_socket:put(whereis(timeline_riakc), EmptyLatestLocal, [return_body]),
+            EmptyLatestObj
     end.
