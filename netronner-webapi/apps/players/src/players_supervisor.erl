@@ -9,7 +9,8 @@ init([]) ->
     {ok, {
         { one_for_one, ?MAX_RESTART, ?MAX_TIME },
         [
-            {players_riakc, {riakcw, start_named_link, [players_riakc, Host, Port]}, permanent, brutal_kill, worker, [riakcw]},
-            {players, {players, start_link, []}, permanent, brutal_kill, worker, [players]}
+            {players_riakc, {riakcw, start_named_link, [players_riakc, Host, Port]}, permanent, 5000, worker, [riakcw]},
+            {players_events, {players_events, start_link, []}, permanent, 5000, worker, [players_events]},
+            {players, {players, start_link, []}, permanent, 5000, worker, [players]}
         ]
     }}.

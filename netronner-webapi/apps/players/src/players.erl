@@ -70,6 +70,7 @@ award_achievement(_State, PlayerId, AchievementName) ->
     UpdatedPlayer = player:with_achievement(Achievement, OldPlayer),
     NewObj = riakc_obj:update_value(OldObj, term_to_binary(UpdatedPlayer)),
     riakc_pb_socket:put(whereis(players_riakc), NewObj),
+    players_events:notify(players_events:achievement_award(UpdatedPlayer, Achievement)),
     {ok, _State}.
 
 -spec ensure_player(binary()) -> riakc_obj:riakc_obj().

@@ -9,6 +9,8 @@ start(_StartType, _StartArgs) ->
     Port = application:get_env(netronner, port, 8080),
     Acceptors = application:get_env(netronner, acceptors, 100),
 
+    ok = players_events:add_handler(netronner_events_publisher), 
+
     Dispatcher = cowboy_router:compile([
         {'_', [
             {"/api/timeline/:page", netronner_handler_json, [timeline, page]},
