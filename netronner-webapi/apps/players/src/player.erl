@@ -28,6 +28,6 @@ achievements({_, _, _, Achievements}) ->
 -spec with_achievement(achievements:achievement(), player()) -> player().
 with_achievement(Achievement, {Id, Name, ImageUrl, Achievements}) ->
     case lists:any(fun(A) -> achievement:eq(A, Achievement) end, Achievements) of
-        true -> {Id, Name, ImageUrl, Achievements}
+        true -> {Id, Name, ImageUrl, Achievements};
         false -> {Id, Name, ImageUrl, [Achievement | Achievements]}
     end.
