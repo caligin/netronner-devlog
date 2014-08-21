@@ -1,9 +1,9 @@
 .PHONY: clean template run
 
+all: template
+
 clean:
 	rm -rf target
-
-all: template
 
 target:
 	mkdir target
