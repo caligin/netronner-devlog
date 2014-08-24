@@ -34,8 +34,7 @@ handle(Req, {players, award_achievement, <<"POST">>}) ->
         end;
 handle(Req, {achievements, list_or_set, <<"GET">>}) ->
     Achievements = achievements:list(),
-    %% FIXME: achievements here might be in a "bad form" to be jsonized
-    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Achievements), Req),
+    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, achievements_to_json(Achievements), Req),
     {ok, Req2, undefined};
 handle(Req, {achievements, list_or_set, <<"PUT">>}) ->
     case gen_auth:is_authorized(administrative, Req) of
@@ -64,4 +63,13 @@ page_index_binding(Req) ->
         <<"latest">> -> latest;
         _ -> binary_to_integer(PageIndexBin)
     end.
+
+-spec achievements_to_json([achievement:achievement()]) -> binary().
+achievements_to_json(Achievements) when is_list(Achievements) ->
+    AsMaps = lists:map(fun({Name, Description, Icon}) -> #{
+            <<"name">> => Name,
+            <<"description">> => Description,
+            <<"icon">> => Icon
+        } end, Achievements),
+    jiffy:encode(AsMaps).
 
