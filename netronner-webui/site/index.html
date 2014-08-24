@@ -13,10 +13,11 @@
             objects = {};
             // merges n objects in given order (leftmost on bottom, rightmost on top)
             objects.merge = function(){
-                return Array.prototype.call(arguments).reduce(function(merged, mergee){
+                return Array.prototype.slice.call(arguments).reduce(function(merged, mergee){
                     for(var k in mergee){
                         merged[k] = mergee[k];
                     }
+                    return merged;
                 },{});
             };
 
@@ -45,7 +46,7 @@
             webapi.prototype.request = function(endpoint, conf) {
                 var url = [this.baseUrl, "api", endpoint].join('/');
                 $.ajax(objects.merge({url: url}, conf));
-            }
+            };
 
             function netronner() {
                 this.templates = {}
@@ -56,8 +57,7 @@
                 this.templates.failure = Handlebars.compile($("#failure-template").html())
                 this.templates.anon = Handlebars.compile($("#anon-template").html())
                 this.templates.logged = Handlebars.compile($("#logged-template").html())
-            }
-
+            };
 
             netronner.prototype.failure = function(response) {
                 function jsonTryParse(txt) {
@@ -67,17 +67,6 @@
                         return txt ? {message: txt} : {};
                     }
                 }
-            netronner.prototype.activateNav = function(nav){
-                $("#nav li").removeClass("active");
-                $("#nav ." + nav).addClass("active");
-            };
-
-            netronner.prototype.anon = function() {
-                this.data.user = {};
-                this.user_result(this.templates.anon(this.data.user));
-            }
-
-            netronner.prototype.logged = function(accessToken, username, userIcon) {
                 this.result(this.templates.failure({
                     status: response.status,
                     value: jsonTryParse(response.responseText)
@@ -162,7 +151,7 @@
                 }
                 ron.anon();
                 window.onhashchange = ron.renderHash.bind(ron);
-            })
+            });
         </script>
         <style>
             html, body { height: 100%; }
