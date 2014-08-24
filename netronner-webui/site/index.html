@@ -9,6 +9,17 @@
         <script src="lib/handlebars-v1.3.0.js"></script>
         <script src="lib/bootstrap.min.js"></script>
         <script type="text/javascript">
+
+            objects = {};
+            // merges n objects in given order (leftmost on bottom, rightmost on top)
+            objects.merge = function(){
+                return Array.prototype.call(arguments).reduce(function(merged, mergee){
+                    for(var k in mergee){
+                        merged[k] = mergee[k];
+                    }
+                },{});
+            };
+
             google = {};
             google.auth = {};
             google.auth.handler = function(ron, authResult) {
@@ -27,11 +38,19 @@
                 }
             }
 
+            function webapi() {
+                this.baseUrl = "@@netronner.webapi.url@@";
+            };
+
+            webapi.prototype.request = function(endpoint, conf) {
+                var url = [this.baseUrl, "api", endpoint].join('/');
+                $.ajax(objects.merge({url: url}, conf));
+            }
+
             function netronner() {
                 this.templates = {}
                 this.data = {}
-                this.webapi = {}
-                this.webapi.url = "@@netronner.webapi.url@@"
+                this.webapi = new webapi();
                 this.templates.timeline = Handlebars.compile($("#timeline-template").html())
                 this.templates.achievements = Handlebars.compile($("#achievements-template").html())
                 this.templates.failure = Handlebars.compile($("#failure-template").html())
@@ -48,6 +67,17 @@
                         return txt ? {message: txt} : {};
                     }
                 }
+            netronner.prototype.activateNav = function(nav){
+                $("#nav li").removeClass("active");
+                $("#nav ." + nav).addClass("active");
+            };
+
+            netronner.prototype.anon = function() {
+                this.data.user = {};
+                this.user_result(this.templates.anon(this.data.user));
+            }
+
+            netronner.prototype.logged = function(accessToken, username, userIcon) {
                 this.result(this.templates.failure({
                     status: response.status,
                     value: jsonTryParse(response.responseText)
@@ -64,56 +94,33 @@
 
             netronner.prototype.timeline = function() {
                 this.activateNav("timeline");
-                this.data.timeline = [{
-                        name: "Angeru",
-                        achievements: ["Ragequit", "Vulgar display of power", "To the top! (Rank 5)", "Pinterest", "Four o' four", "Fanpaistic!", "Lack of presence", "D i s c o n n e c t e d", "Delusions of victory"]
-                    }, {
-                        name: "Bidi",
-                        achievements: []
-                    }, {
-                        name: "Dani",
-                        achievements: ["Hell wait", "Die hard", "Bowling alley", "Out of reach", "Vulgar display of power", "Strong", "Stronger", "Fanpaistic!"]
-                    }, {
-                        name: "Dave",
-                        achievements: ["Fanpaistic!", "Strong", "Sanpei", "Vulgar display of power", "To the top! (Rank 3)", "Can't hold all these doras! (Rank 1)"]
-                    }, {
-                        name: "Foo",
-                        achievements: ["Fanpaistic!", "Kan I win?", "Delusions of victory", "Crash course", "Vulgar display of power", "To the top! (Rank 4)", "Unlucky Fourth Object", "Hell wait", "Nine etched fails", "Kan not", "Player killer", "Lack of presence", "Invisible", "Can't hold all these doras! (Rank 1)", "Strongester", "Seventh son of a seventh tile"]
-                    }, {
-                        name: "Marco",
-                        achievements: []
-                    }, {
-                        name: "Mary",
-                        achievements: ["Vulgar display of power"]
-                    }, {
-                        name: "Marty",
-                        achievements: ["Seventh son of a seventh tile", "Vulgar display of power", "It is (not) alone", "Strong"]
-                    }, {
-                        name: "Mik",
-                        achievements: ["Little mermaid", "Fanpaistic!", "Ragequit", "To the top! (Rank 4)", "Player killer", "Hell wait", "Lack of presence", "Invisible", "Strong", "Can't hold all these doras! (Rank 1)"]
-                    }, {
-                        name: "Mike",
-                        achievements: ["Seventh son of a seventh tile"]
-                    }, {
-                        name: "Pelo",
-                        achievements: ["Hell wait", "Fanpaistic!", "To the top! (Rank 1)"]
-                    }, {
-                        name: "Simo",
-                        achievements: ["Four o' four", "To the top! (Rank 3)", "Delusions of victory", "Seventh son of a seventh tile", "It is (not) alone", "Lack of presence", "Fanpaistic!", "Delusions of victory"]
-                    }, {
-                        name: "Taz",
-                        achievements: ["Adoptive parent", "Die hard", "Player killer", "Strong", "Out of reach", "Hell wait", "Delusions of victory"]
-                    }];
-                this.result(this.templates.timeline(this.data.timeline));
                 location.hash = "#timeline";
-            }
+                // TODO: render loadMask
+                this.webapi.request("timeline/latest",{
+                    success: function(data){
+                        this.data.previousPage = data["previous"];
+                        if(!this.data.timelineEvents){
+                            this.data.timelineEvents = [];
+                        }
+                        this.data.timelineEvents.push.apply(this.data.timelineEvents, data["events"]);
+                        this.result(this.templates.timeline(this.data.timeline));
+                        //TODO: register handler to fetch next page when scrolling to bottom
+                    }
+                });
+
+            };
 
             netronner.prototype.achievements = function() {
                 this.activateNav("achievements");
-                this.data.achievements = [{"name": "If you can't beat em....", "description": "deal-in to avoid someone else winning", "category": "boh"}, {"name": "I have an encoding problem! ", "description": "win with a hand composed entirely of pairs/pons/kans of characters and white dragons, then declare BEGINNING OF COSMOS!", "category": ""}, {"name": "Tiles are red, violets are blue... ", "description": "win with all three aka doras and all four red dragons", "category": ""}, {"name": "dragon trainer ", "description": "win with little three dragons", "category": ""}, {"name": "mother of dragons ", "description": "win with big three dragons", "category": ""}, {"name": "all green! ", "description": "win with the green hand", "category": ""}, {"name": "Literate ", "description": "win with an all-characters hand", "category": ""}, {"name": "Bowling alley ", "description": "win with an all-circles hand", "category": ""}, {"name": "A walk in the woods ", "description": "win with an all-bamboos hand", "category": ""}, {"name": "last airbender ", "description": "win with little four winds", "category": ""}, {"name": "in the eye of the storm ", "description": "win with big four winds", "category": ""}, {"name": "pick a seaweed from the bottom of the ocean ", "description": "win with haitei+rinshan kaihou", "category": ""}, {"name": "one shot one kill ", "description": "oneshot an opponent that had 25000+ points at the beginning of the match with a direct hit", "category": ""}, {"name": "player killer ", "description": "reduce an opponent's points below zero with a direct hit", "category": ""}, {"name": "shot on the crowd ", "description": "reduce an opponent's points below zero with a tsumo", "category": ""}, {"name": "grenadier ", "description": "reduce two opponent's points below zero with a single tsumo", "category": ""}, {"name": "nuke from orbit ", "description": "reduce three opponent's points below zero with a single tsumo", "category": ""}, {"name": "o hai, I'm in tenpai! ", "description": "declare a double riichi", "category": ""}, {"name": "I run an orphanage ", "description": "win with thirteen orphans on a thirteen-sided wait", "category": ""}, {"name": "Save the children from the bad guys ", "description": "win with thirteen orphans robbing a closed kan", "category": ""}, {"name": "I'm on fire! ", "description": "stay east for 5 consecutive bonus hands", "category": ""}, {"name": "8th wonder ", "description": "win a bonus hand with 8+ honba", "category": ""}, {"name": "Against a common enemy ", "description": "participate in a double-ron", "category": ""}, {"name": "oath of allegiance ", "description": "participate in a triple-ron", "category": ""}, {"name": "can't hold all these doras ", "description": "win a hand with 6+/9+/12+ doras (rank 1/2/3)", "category": ""}, {"name": "Hell wait ", "description": "win a hand with a 1-out wait", "category": ""}, {"name": "blitzkrieg ", "description": "win a hand with double riichi + ippatsu", "category": ""}, {"name": "god called on the phone .. ", "description": "win with god's hand", "category": ""}, {"name": "vulgar display of power ", "description": "take precedence of a chi/pon declaration with a pon/ron declaration", "category": ""}, {"name": "adoptive parent ", "description": "win with thirteen orphans", "category": ""}, {"name": "they see me ronning, they hatin'  ", "description": " declare three consecutive rons from three different players", "category": ""}, {"name": "fanpaistic! ", "description": "call a fanpai pon at the first round", "category": ""}, {"name": "To the Top ", "description": "finish a game with 30-40-50-60-70-80-90k points (ranks 1-7)", "category": ""}, {"name": "Out of reach ", "description": "call a ron on the riichi declaration tile of another player", "category": ""}, {"name": "unriichiable ", "description": "declare a riichi when you see all your outs among the discards/melds", "category": ""}, {"name": "siberian express ", "description": "win with a pin 9-gates. you must shout SIBERIAN EXPRESS in epic pose", "category": ""}, {"name": "Crash course ", "description": "force an abortive draw declaring the fourth riichi", "category": ""}, {"name": "Four o' four ", "description": " force an abortive draw by calling the fourth kan ", "category": ""}, {"name": "Unlucky fourth object ", "description": "force a draw by discarding the fourth same wind in the first round", "category": ""}, {"name": "D i s c o n n e c t e d ", "description": "open an initial hand with no pairs nor contiguous tiles (brotip: take a screenshot of the hand to claim the achi and keep on playing)", "category": ""}, {"name": "nine etched fails ", "description": "force an abortive draw by having 9+ different orphans on the opening hand", "category": ""}, {"name": "Die Hard ", "description": "finish a game with less than 1k points", "category": ""}, {"name": "invisible", "description": "terminate a full game (east-south match) without any of your tiles being called", "category": ""}, {"name": "lack of presence ", "description": "terminate a complete wind round without any of your tiles being called", "category": ""}, {"name": "superman ", "description": "terminate a game without losing a single point", "category": ""}, {"name": " it is (not) alone", "description": "win on a pair wait on the last closed tile in your hand", "category": ""}, {"name": "ping pon ", "description": "have two players call four consecutive pons from each other (awarded to both)", "category": ""}, {"name": "deja vu ", "description": "call twice the same chi", "category": ""}, {"name": "han solo ", "description": "win waiting for a 1-out character tile", "category": ""}, {"name": "keep it simple ", "description": "score a pinfu", "category": ""}, {"name": "seventh son of a seventh tile ", "description": "score a seven pairs", "category": ""}, {"name": "pinterest ", "description": "call 4+ pin tiles from your opponents in a single game", "category": ""}, {"name": "Little mermaid ", "description": "score a Bottom of the Sea", "category": ""}, {"name": "Sanpei ", "description": "score a Bottom of the River", "category": ""}, {"name": "delusions of victory", "description": "declare a false Ron and suffer a chombo penalty for it", "category": ""}, {"name": "kan I win? ", "description": "score a rinshan kaihou", "category": ""}, {"name": "No pain, no gain", "description": "terminate a full game (east-south match) with a result of +-0", "category": ""}, {"name": "Kan not", "description": "discard four times the same tile in a single game", "category": ""}, {"name": "Strong/Stronger/Strongest", "description": "win a game with 1/2/3 pungs of ⑨ in your hand (open or closed)", "category": ""}, {"name": "Strongester/Strongestest/Strongestestest", "description": "win a game with 1/2/3 kongs of ⑨ in your hn((d open or closed)", "category": ""}]
-                this.result(this.templates.achievements(this.data.achievements));
                 location.hash = "#achievements";
-            }
+                // TODO: render loadMask
+                this.webapi.request("achievements",{
+                    success: function(data){
+                        this.data.achievements = data;
+                        this.result(this.templates.achievements(this.data.achievements));
+                    }
+                });
+            };
 
             netronner.prototype.renderHash = function(_newHash) {
                 if (location.hash && location.hash !== "#") {
@@ -291,6 +298,10 @@
                  class="img-thumbnail"
                  style="width:70px; height:70px; margin:-40px 0 0 0" />
             {{username}}
+            <div class="col-md-6">
+                <!-- TODO: add onclick handler -->
+                <button type="button" class="btn btn-default">Award achievement</button>
+            </div>
         </script>
 
 
