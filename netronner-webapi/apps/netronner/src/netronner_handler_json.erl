@@ -1,7 +1,10 @@
 -module(netronner_handler_json).
 -behaviour(cowboy_http_handler).
 -export([init/3, handle/2, terminate/3]).
--define(HEADERS, [{<<"content-type">>, <<"application/json">>}]).
+-define(HEADERS, [
+        {<<"content-type">>, <<"application/json">>},
+        {<<"access-control-allow-origin">>, <<"*">>}
+    ]).
 
 
 
