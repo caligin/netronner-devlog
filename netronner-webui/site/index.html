@@ -85,14 +85,13 @@
                 this.activateNav("timeline");
                 location.hash = "#timeline";
                 // TODO: render loadMask
+                var self = this;
                 this.webapi.request("timeline/latest",{
                     success: function(data){
-                        this.data.previousPage = data["previous"];
-                        if(!this.data.timelineEvents){
-                            this.data.timelineEvents = [];
-                        }
-                        this.data.timelineEvents.push.apply(this.data.timelineEvents, data["events"]);
-                        this.result(this.templates.timeline(this.data.timeline));
+                        self.data.nextPage = data["previous"];
+                        self.data.timelineEvents = [];
+                        self.data.timelineEvents.push.apply(self.data.timelineEvents, data["events"]);
+                        self.result(self.templates.timeline(self.data.timelineEvents));
                         //TODO: register handler to fetch next page when scrolling to bottom
                     }
                 });
@@ -103,10 +102,11 @@
                 this.activateNav("achievements");
                 location.hash = "#achievements";
                 // TODO: render loadMask
+                var self = this;
                 this.webapi.request("achievements",{
                     success: function(data){
-                        this.data.achievements = data;
-                        this.result(this.templates.achievements(this.data.achievements));
+                        self.data.achievements = data;
+                        self.result(self.templates.achievements(self.data.achievements));
                     }
                 });
             };
@@ -215,15 +215,20 @@
             <div class="row">
             <div class="col-md-12">
             <div class="panel panel-default">
-            <div class="panel-heading">{{name}}</div>
-            <div class="panel-body">
-            {{#each achievements}}
-            <div class="btn-group">
-            <a href="#achievements" class="btn btn-info btn-sm">{{this}}</a>
+            <div class="panel-body media">
+            <a class="pull-left" href="#">
+              <img class="media-object" src="{{data.player.image_url}}?sz=50" alt="{{data.player.name}}">
+            </a>
+            <a class="pull-left" href="#achievements">
+              <img class="media-object" src="{{data.achievement.icon}}" alt="{{data.achievement.name}}">
+            </a>
+            <div class="media-body">
+              <h4 class="media-heading">Achievement unlock!</h4>
+              {{data.player.name}} unlocked achievement {{data.achievement.name}} !
             </div>
-            {{/each}}
 
             </div>
+            <div class="panel-footer">TODO: timestamp here? + linkare player e achi</div>
             </div>
             </div>
             </div>
