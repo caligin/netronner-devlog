@@ -49,8 +49,8 @@
             };
 
             function netronner() {
-                this.templates = {}
-                this.data = {}
+                this.templates = {};
+                this.data = {};
                 this.webapi = new webapi();
                 this.templates.timeline = Handlebars.compile($("#timeline-template").html())
                 this.templates.achievements = Handlebars.compile($("#achievements-template").html())
@@ -58,7 +58,7 @@
                 this.templates.anon = Handlebars.compile($("#anon-template").html())
                 this.templates.logged = Handlebars.compile($("#logged-template").html())
             };
-
+            
             netronner.prototype.failure = function(response) {
                 function jsonTryParse(txt) {
                     try {
@@ -137,7 +137,14 @@
                     userIcon: userIcon
                 };
                 this.user_result(this.templates.logged(this.data.user));
-            }
+            };
+            
+            Handlebars.registerHelper('erl_time', function(erlTimestamp){
+                var megaSecs = erlTimestamp[0];
+                var secs = erlTimestamp[1];
+                var microSecs = erlTimestamp[2];
+                return new Date(megaSecs*1000000000 + secs*1000 + Math.floor(microSecs / 1000)).toLocaleString();
+            });
 
             var ron = null;
 
@@ -217,18 +224,19 @@
             <div class="panel panel-default">
             <div class="panel-body media">
             <a class="pull-left" href="#">
-              <img class="media-object" src="{{data.player.image_url}}?sz=50" alt="{{data.player.name}}">
+              <img class="media-object img-rounded" src="{{data.player.image_url}}?sz=64" alt="{{data.player.name}}">
             </a>
             <a class="pull-left" href="#achievements">
-              <img class="media-object" src="{{data.achievement.icon}}" alt="{{data.achievement.name}}">
+              <img class="media-object" src="icons/{{data.achievement.icon}}" alt="{{data.achievement.name}}">
             </a>
             <div class="media-body">
               <h4 class="media-heading">Achievement unlock!</h4>
-              {{data.player.name}} unlocked achievement {{data.achievement.name}} !
+              <!-- TODO: player name should link to player gaming profile (does not exist yet), achievement should link to specific one, not only to page -->
+              <a href="#">{{data.player.name}}</a> unlocked achievement <a href="#achievements">{{data.achievement.name}}</a> !
             </div>
 
             </div>
-            <div class="panel-footer">TODO: timestamp here? + linkare player e achi</div>
+            <div class="panel-footer"><small><em>{{erl_time timestamp}}</em></small></div>
             </div>
             </div>
             </div>
@@ -288,13 +296,41 @@
         </script>
 
         <script id="logged-template" type="text/x-handlebars-template">
+            <div class="row">
+            <div class="col-md-12">
             <img src="{{userIcon}}?sz=70"
                  class="img-thumbnail"
                  style="width:70px; height:70px; margin:-40px 0 0 0" />
-            {{username}}
-            <div class="col-md-6">
+            <span class="h4">{{username}}</span>
+            </div>
+            </div>
+            <div class="row" style="margin-top: 10px">
+            <div class="col-md-12">
                 <!-- TODO: add onclick handler -->
-                <button type="button" class="btn btn-default">Award achievement</button>
+                <button type="button"
+                    class="btn btn-default"
+                    data-toggle="modal"
+                    data-target="#award_window">
+                            Award achievement
+                </button>
+                <div class="modal fade" id="award_window" tabindex="-1" role="dialog" aria-labelledby="awardAchievementLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                          <h4 class="modal-title" id="awardAchievementLabel">Award Achievement</h4>
+                        </div>
+                        <div class="modal-body">
+                          ...
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                          <button type="button" class="btn btn-primary" data-dismiss="modal">Award</button>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+            </div>
             </div>
         </script>
 
