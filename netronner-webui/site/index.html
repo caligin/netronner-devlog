@@ -52,11 +52,12 @@
                 this.templates = {};
                 this.data = {};
                 this.webapi = new webapi();
-                this.templates.timeline = Handlebars.compile($("#timeline-template").html())
-                this.templates.achievements = Handlebars.compile($("#achievements-template").html())
-                this.templates.failure = Handlebars.compile($("#failure-template").html())
-                this.templates.anon = Handlebars.compile($("#anon-template").html())
-                this.templates.logged = Handlebars.compile($("#logged-template").html())
+                this.templates.timeline = Handlebars.compile($("#timeline-template").html());
+                this.templates.achievements = Handlebars.compile($("#achievements-template").html());
+                this.templates.player = Handlebars.compile($("#player-template").html());
+                this.templates.failure = Handlebars.compile($("#failure-template").html());
+                this.templates.anon = Handlebars.compile($("#anon-template").html());
+                this.templates.logged = Handlebars.compile($("#logged-template").html());
             };
             
             netronner.prototype.failure = function(response) {
@@ -98,24 +99,43 @@
 
             };
 
-            netronner.prototype.achievements = function() {
+            netronner.prototype.achievements = function(selectedName) {
                 this.activateNav("achievements");
-                location.hash = "#achievements";
+                location.hash = "#achievements" + selectedName ? "/" + selectedName : "";
                 // TODO: render loadMask
                 var self = this;
                 this.webapi.request("achievements",{
                     success: function(data){
                         self.data.achievements = data;
                         self.result(self.templates.achievements(self.data.achievements));
+                        var selected =selectedName && document.getElementById("achievement_" + selectedName);
+                        if(selected){
+                            selected.scrollToView();
+                        }
+                    }
+                });
+            };
+
+            netronner.prototype.player = function(playerGoogleId) {
+                // add a nav with player name?
+//                this.activateNav("player");
+                location.hash = "#player/" + playerGoogleId;
+                // TODO: render loadMask
+                var self = this;
+                this.webapi.request("players/" + playerGoogleId ,{
+                    success: function(data){
+                        self.data.player = data;
+                        self.result(self.templates.player(self.data.player));
                     }
                 });
             };
 
             netronner.prototype.renderHash = function(_newHash) {
                 if (location.hash && location.hash !== "#") {
-                    var templateName = location.hash.slice(1);
+                    var pieces = location.hash.slice(1).split("/");
+                    var templateName = pieces.shift();
                     if (typeof netronner.prototype[templateName] === "function") {
-                        netronner.prototype[templateName].call(this);
+                        netronner.prototype[templateName].apply(this, pieces);
                     }
                 }
             };
@@ -152,7 +172,7 @@
                 ron = new netronner();
                 authHandler = google.auth.handler.bind(this, ron);
                 if (location.hash && location.hash !== "#") {
-                    ron.renderHash()
+                    ron.renderHash();
                 } else {
                     ron.timeline();
                 }
@@ -226,13 +246,13 @@
             <a class="pull-left" href="#">
               <img class="media-object img-rounded" src="{{data.player.image_url}}?sz=64" alt="{{data.player.name}}">
             </a>
-            <a class="pull-left" href="#achievements">
+            <a class="pull-left" href="#achievements/{{data.achievement.name}}">
               <img class="media-object" src="icons/{{data.achievement.icon}}" alt="{{data.achievement.name}}">
             </a>
             <div class="media-body">
               <h4 class="media-heading">Achievement unlock!</h4>
-              <!-- TODO: player name should link to player gaming profile (does not exist yet), achievement should link to specific one, not only to page -->
-              <a href="#">{{data.player.name}}</a> unlocked achievement <a href="#achievements">{{data.achievement.name}}</a> !
+              <!-- TODO: player name should link to player gaming profile (does not exist yet) -->
+              <a href="#">{{data.player.name}}</a> unlocked achievement <a href="#achievements/{{data.achievement.name}}">{{data.achievement.name}}</a> !
             </div>
 
             </div>
@@ -267,10 +287,44 @@
             </div>
             </div>
             {{/unless}}
-            {{#each this}}
+            {{#if this}}
             <div class="row">
             <div class="col-md-12">
             <div class="panel panel-default">
+            <div class="panel-body media">
+            <a class="pull-left" href="#">
+              <img class="media-object img-rounded" src="{{image_url}}?sz=64" alt="{{name}}">
+            </a>
+            <div class="media-body">
+              <h2 class="media-heading">{{name}}</h4>
+              <h4 class="media-heading">Achievements Unlocked:</h4>
+              {{#each achievements}}
+                <div>TODO</div>
+              {{/each}}
+            </div>
+
+            </div>
+            <div class="panel-footer"><small><em>{{erl_time timestamp}}</em></small></div>
+            </div>
+            </div>
+            </div>
+            {{/if}}
+        </script>
+
+        <script id="player-template" type="text/x-handlebars-template">
+            {{#unless this}}
+            <div class="row">
+            <div class="col-md-12">
+            <div class="panel panel-danger">
+            <div class="panel-body">Player unknown</div>
+            </div>
+            </div>
+            </div>
+            {{/unless}}
+            {{#each this}}
+            <div class="row">
+            <div class="col-md-12">
+            <div class="panel panel-default" id="achievement_{{name}}">
             <div class="panel-heading">{{name}}</div>
             <div class="panel-body">
                 {{description}}
