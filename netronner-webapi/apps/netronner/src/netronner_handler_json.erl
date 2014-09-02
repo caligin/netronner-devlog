@@ -19,8 +19,8 @@ handle(Req, {timeline, page, <<"GET">>}) ->
     {ok, Req2, undefined};
 handle(Req, {players, load, <<"GET">>}) ->
     {PlayerId, _} = cowboy_req:binding(player_id, Req),
-    Player = players:load(PlayerId),
-    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Player), Req),
+    Player = player_to_json(players:load(PlayerId)),
+    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, Player, Req),
     {ok, Req2, undefined};
 handle(Req, {players, award_achievement, <<"POST">>}) ->
     case gen_auth:is_authorized(google_token, Req) of
@@ -67,12 +67,26 @@ page_index_binding(Req) ->
         _ -> binary_to_integer(PageIndexBin)
     end.
 
+-spec achievement_to_map(achievement:achievement()) -> map().
+achievement_to_map({Name, Description, Icon}) -> 
+    #{
+        <<"name">> => Name,
+        <<"description">> => Description,
+        <<"icon">> => Icon
+    }.
+
 -spec achievements_to_json([achievement:achievement()]) -> binary().
 achievements_to_json(Achievements) when is_list(Achievements) ->
-    AsMaps = lists:map(fun({Name, Description, Icon}) -> #{
-            <<"name">> => Name,
-            <<"description">> => Description,
-            <<"icon">> => Icon
-        } end, Achievements),
+    AsMaps = lists:map(fun achievement_to_map/1, Achievements),
     jiffy:encode(AsMaps).
+
+-spec player_to_json(player:player()) -> binary().
+player_to_json({Id, Name, ImageUrl, Achievements}) ->
+    AsMap = #{
+            <<"id">> => Id,
+            <<"name">> => Name,
+            <<"iamgeUrl">> => ImageUrl,
+            <<"achievements">> => lists:map(fun achievement_to_map/1, Achievements)
+        },
+    jiffy:encode(AsMap).
 
