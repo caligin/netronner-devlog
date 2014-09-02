@@ -25,9 +25,13 @@ image_url({_, _, ImageUrl, _}) ->
 achievements({_, _, _, Achievements}) ->
     Achievements.
 
--spec with_achievement(achievements:achievement(), player()) -> player().
+-spec with_achievement(achievement:achievement(), player()) -> player().
 with_achievement(Achievement, {Id, Name, ImageUrl, Achievements}) ->
     case lists:any(fun(A) -> achievement:eq(A, Achievement) end, Achievements) of
         true -> {Id, Name, ImageUrl, Achievements};
-        false -> {Id, Name, ImageUrl, [Achievement | Achievements]}
+        false -> {Id, Name, ImageUrl, lists:sort(fun sort_by_achievement_name/2, [Achievement | Achievements])}
     end.
+
+-spec sort_by_achievement_name(achievement:achievement(),achievement:achievement()) -> boolean().
+sort_by_achievement_name({LhName, _ , _}, {RhName, _, _}) ->
+    string:to_lower(binary_to_list(LhName)) =< string:to_lower(binary_to_list(RhName)).
