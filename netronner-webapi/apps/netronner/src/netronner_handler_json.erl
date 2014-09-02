@@ -85,7 +85,7 @@ player_to_json({Id, Name, ImageUrl, Achievements}) ->
     AsMap = #{
             <<"id">> => Id,
             <<"name">> => Name,
-            <<"iamgeUrl">> => ImageUrl,
+            <<"imageUrl">> => ImageUrl,
             <<"achievements">> => lists:map(fun achievement_to_map/1, Achievements)
         },
     jiffy:encode(AsMap).
