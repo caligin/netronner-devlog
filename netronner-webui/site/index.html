@@ -29,9 +29,10 @@
                     $.ajax({
                         url: "https://www.googleapis.com/plus/v1/people/me?access_token=" + accessToken,
                         success: function(data) {
+                            var id = data["id"];
                             var username = data["displayName"];
                             var unsizedUserIcon = data["image"]["url"].replace(/\?.*$/, "");
-                            ron.logged(accessToken, username, unsizedUserIcon);
+                            ron.logged(accessToken, id, username, unsizedUserIcon);
                         }
                     });
                 } else {
@@ -110,14 +111,14 @@
                         self.result(self.templates.achievements(self.data.achievements));
                         var selected =selectedName && document.getElementById("achievement_" + selectedName);
                         if(selected){
-                            selected.scrollToView();
+                            selected.scrollIntoView();
                         }
                     }
                 });
             };
 
             netronner.prototype.player = function(playerGoogleId) {
-                // add a nav with player name?
+                this.deactivateNavs();
 //                this.activateNav("player");
                 location.hash = "#player/" + playerGoogleId;
                 // TODO: render loadMask
@@ -126,6 +127,7 @@
                     success: function(data){
                         self.data.player = data;
                         self.result(self.templates.player(self.data.player));
+                        $('[data-toggle=tooltip]').tooltip()
                     }
                 });
             };
@@ -145,14 +147,19 @@
                 $("#nav ." + nav).addClass("active");
             };
 
+            netronner.prototype.deactivateNavs = function(){
+                $("#nav li").removeClass("active");
+            };
+
             netronner.prototype.anon = function() {
                 this.data.user = {};
                 this.user_result(this.templates.anon(this.data.user));
             }
 
-            netronner.prototype.logged = function(accessToken, username, userIcon) {
+            netronner.prototype.logged = function(accessToken, id, username, userIcon) {
                 this.data.user = {
                     accessToken: accessToken,
+                    id: id,
                     username : username,
                     userIcon: userIcon
                 };
@@ -243,7 +250,7 @@
             <div class="col-md-12">
             <div class="panel panel-default">
             <div class="panel-body media">
-            <a class="pull-left" href="#">
+            <a class="pull-left" href="#player/{{data.player.id}}">
               <img class="media-object img-rounded" src="{{data.player.image_url}}?sz=64" alt="{{data.player.name}}">
             </a>
             <a class="pull-left" href="#achievements/{{data.achievement.name}}">
@@ -252,7 +259,7 @@
             <div class="media-body">
               <h4 class="media-heading">Achievement unlock!</h4>
               <!-- TODO: player name should link to player gaming profile (does not exist yet) -->
-              <a href="#">{{data.player.name}}</a> unlocked achievement <a href="#achievements/{{data.achievement.name}}">{{data.achievement.name}}</a> !
+              <a href="#player/{{data.player.id}}">{{data.player.name}}</a> unlocked achievement <a href="#achievements/{{data.achievement.name}}">{{data.achievement.name}}</a> !
             </div>
 
             </div>
@@ -287,28 +294,24 @@
             </div>
             </div>
             {{/unless}}
-            {{#if this}}
+            {{#each this}}
             <div class="row">
             <div class="col-md-12">
-            <div class="panel panel-default">
+            <div class="panel panel-default" id="achievement_{{name}}">
             <div class="panel-body media">
             <a class="pull-left" href="#">
-              <img class="media-object img-rounded" src="{{image_url}}?sz=64" alt="{{name}}">
+              <!-- TODO: change icon with iconCls -->
+              <img class="media-object img-rounded" src="icons/{{icon}}" alt="{{name}}">
             </a>
             <div class="media-body">
-              <h2 class="media-heading">{{name}}</h4>
-              <h4 class="media-heading">Achievements Unlocked:</h4>
-              {{#each achievements}}
-                <div>TODO</div>
-              {{/each}}
-            </div>
-
-            </div>
-            <div class="panel-footer"><small><em>{{erl_time timestamp}}</em></small></div>
+               <h4 class="media-heading">{{name}}</h4>
+                {{description}}
             </div>
             </div>
             </div>
-            {{/if}}
+            </div>
+            </div>
+            {{/each}}
         </script>
 
         <script id="player-template" type="text/x-handlebars-template">
@@ -316,23 +319,42 @@
             <div class="row">
             <div class="col-md-12">
             <div class="panel panel-danger">
-            <div class="panel-body">Player unknown</div>
+            <div class="panel-body">Unknown player</div>
             </div>
             </div>
             </div>
             {{/unless}}
-            {{#each this}}
+            {{#if this}}
             <div class="row">
             <div class="col-md-12">
-            <div class="panel panel-default" id="achievement_{{name}}">
-            <div class="panel-heading">{{name}}</div>
+            <div class="panel panel-default">
             <div class="panel-body">
-                {{description}}
+            <div class="media">
+                <a class="pull-left" href="#">
+                  <img class="media-object img-rounded" src="{{imageUrl}}?sz=64" alt="{{name}}">
+                </a>
+                <div class="media-body">
+                    <h2 class="media-heading">{{name}}</h2>
+                    <br>
+                    <h4 class="media-heading">Achievements Unlocked</h4>
+                    {{#each achievements}}
+                        <div class="media" data-toggle="tooltip" title="{{description}}" data-placement="bottom">
+                            <a class="pull-left" href="#achievements/{{name}}">
+                              <img class="media-object" src="icons/{{icon}}" alt="{{name}}">
+                            </a>
+                            <div class="media-body">
+                                {{name}}
+                            </div>
+                        </div>
+                    {{/each}}
+                </div>
+            </div>
+
             </div>
             </div>
             </div>
             </div>
-            {{/each}}
+            {{/if}}
         </script>
 
         <script id="anon-template" type="text/x-handlebars-template">
@@ -352,21 +374,22 @@
         <script id="logged-template" type="text/x-handlebars-template">
             <div class="row">
             <div class="col-md-12">
-            <img src="{{userIcon}}?sz=70"
+            <a href="#player/{{id}}"><img src="{{userIcon}}?sz=70"
                  class="img-thumbnail"
-                 style="width:70px; height:70px; margin:-40px 0 0 0" />
+                 style="width:70px; height:70px; margin:-40px 0 0 0" /></a>
             <span class="h4">{{username}}</span>
             </div>
             </div>
             <div class="row" style="margin-top: 10px">
             <div class="col-md-12">
-                <!-- TODO: add onclick handler -->
                 <button type="button"
                     class="btn btn-default"
                     data-toggle="modal"
                     data-target="#award_window">
-                            Award achievement
+                        Award achievement
                 </button>
+
+            
                 <div class="modal fade" id="award_window" tabindex="-1" role="dialog" aria-labelledby="awardAchievementLabel" aria-hidden="true">
                     <div class="modal-dialog">
                       <div class="modal-content">
