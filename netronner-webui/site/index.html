@@ -5,12 +5,23 @@
         <link href="resources/favicon.ico" rel="icon" type="image/x-icon" />
         <link rel="shortcut icon" href="favicon.ico" />
         <link rel="stylesheet" type="text/css" href="lib/bootstrap.min.css" >
+        <link rel="stylesheet" type="text/css" href="lib/bootstrap-combobox.css" >
         <script src="lib/jquery-2.0.3.min.js"></script>    
         <script src="lib/handlebars-v1.3.0.js"></script>
         <script src="lib/bootstrap.min.js"></script>
+        <script src="lib/bootstrap-combobox.js"></script>
+                
         <script type="text/javascript">
 
+            String.prototype.format = function(){
+                var formatArgs = Array.prototype.slice.call(arguments);
+                return formatArgs.reduce(function(memo, arg, i){
+                    return memo.replace(new RegExp("\\{"+i+"\\}","g"), arg);
+                }, this.valueOf());
+            };
+
             objects = {};
+
             // merges n objects in given order (leftmost on bottom, rightmost on top)
             objects.merge = function(){
                 return Array.prototype.slice.call(arguments).reduce(function(merged, mergee){
@@ -20,10 +31,49 @@
                     return merged;
                 },{});
             };
+            
+            objects.global = (function(){
+                var glob = this;
+                return function(){
+                    return glob;
+                };
+            })();
+            
+            objects.namespace = function(namespace){
+                return namespace.split('.').reduce(function(memo, piece){
+                    memo[piece] = {};
+                    return memo[piece];
+                }, this.global());
+            };
 
-            google = {};
-            google.auth = {};
-            google.auth.handler = function(ron, authResult) {
+            objects.remove = function(obj /*, properties... */){
+                var removed = {};
+                var toRemove = Array.prototype.slice.call(arguments, 1);
+                toRemove.forEach(function(prop){
+                    if(obj.hasOwnProperty(prop)){
+                        removed[prop] = obj[prop];
+                        delete obj[prop];
+                    }
+                });
+                return removed;
+            };
+            
+            objects.namespace('dbc.precondition');
+            
+            dbc.precondition.defined = function(e, message){
+                if(e===undefined){
+                    throw message;
+                }
+            };
+            dbc.precondition.keysDefined = function(obj, keys){
+                keys.forEach(function(k){
+                    if(obj[k]===undefined){
+                        throw "{0} must be defined".format(k);
+                    }
+                });
+            };
+
+            objects.namespace('Google.auth').handler = function(ron, authResult) {
                 if (authResult['status']['signed_in']) {
                     var accessToken = authResult['access_token'];
                     $.ajax({
@@ -40,19 +90,49 @@
                 }
             }
 
-            function webapi() {
+            function Webapi() {
                 this.baseUrl = "@@netronner.webapi.url@@";
             };
+            
+            Webapi.prototype.endpoint = function(endpoint){
+                return [this.baseUrl, "api", endpoint].join('/');
+            }
 
-            webapi.prototype.request = function(endpoint, conf) {
-                var url = [this.baseUrl, "api", endpoint].join('/');
-                $.ajax(objects.merge({url: url}, conf));
+            Webapi.prototype.request = function(endpoint, conf) {
+                $.ajax(objects.merge({url: this.endpoint(endpoint)}, conf));
+            };
+            
+            function Combobox(config){
+                dbc.precondition.keysDefined(config, ["selector", "url", "mappingFn"]);
+                config.itemTpl && (this.optionTemplate = config.optionTemplate);
+                var containerEl = $(config.selector); 
+                containerEl.html('<select class="combobox form-control"><option></option></select>');
+                this.el = $("select", containerEl);
+                var comboboxOptions = objects.remove(config, 'menu', 'item', 'matcher', 'sorter', 'highlighter', 'template', 'bsVersion');
+                this.el.combobox(comboboxOptions);
+                this.cb = this.el.data().combobox;
+                var self = this;
+                $.ajax({
+                    url: config.url,
+                    success: function(options){
+                        self.el.html(self._renderOptions(options.map(config.mappingFn)));
+                        self.cb.refresh();
+                    },
+                    error: console.log.bind(console)
+                });
+            }
+            Combobox.prototype.optionTemplate = '<option value="{1}">{0}</option>';
+            Combobox.prototype._renderOptions = function(options){
+                var self = this;
+                return '<option></option>' + options.map(function(optionAndValue){
+                    return self.optionTemplate.format.apply(self.optionTemplate, optionAndValue);
+                }).join('');
             };
 
-            function netronner() {
+            function Netronner() {
                 this.templates = {};
                 this.data = {};
-                this.webapi = new webapi();
+                this.webapi = new Webapi();
                 this.templates.timeline = Handlebars.compile($("#timeline-template").html());
                 this.templates.achievements = Handlebars.compile($("#achievements-template").html());
                 this.templates.player = Handlebars.compile($("#player-template").html());
@@ -61,7 +141,7 @@
                 this.templates.logged = Handlebars.compile($("#logged-template").html());
             };
             
-            netronner.prototype.failure = function(response) {
+            Netronner.prototype.failure = function(response) {
                 function jsonTryParse(txt) {
                     try {
                         return JSON.parse(txt);
@@ -73,17 +153,17 @@
                     status: response.status,
                     value: jsonTryParse(response.responseText)
                 }));
-            }
+            };
 
-            netronner.prototype.result = function(content) {
+            Netronner.prototype.result = function(content) {
                 $('#results').html(content);
-            }
+            };
 
-            netronner.prototype.user_result = function(content) {
+            Netronner.prototype.user_result = function(content) {
                 $('#user_info').html(content);
-            }
+            };
 
-            netronner.prototype.timeline = function() {
+            Netronner.prototype.timeline = function() {
                 this.activateNav("timeline");
                 location.hash = "#timeline";
                 // TODO: render loadMask
@@ -100,9 +180,9 @@
 
             };
 
-            netronner.prototype.achievements = function(selectedName) {
+            Netronner.prototype.achievements = function(selectedName) {
                 this.activateNav("achievements");
-                location.hash = "#achievements" + selectedName ? "/" + selectedName : "";
+                location.hash = "#achievements" + (selectedName ? "/" + selectedName : "");
                 // TODO: render loadMask
                 var self = this;
                 this.webapi.request("achievements",{
@@ -117,7 +197,7 @@
                 });
             };
 
-            netronner.prototype.player = function(playerGoogleId) {
+            Netronner.prototype.player = function(playerGoogleId) {
                 this.deactivateNavs();
 //                this.activateNav("player");
                 location.hash = "#player/" + playerGoogleId;
@@ -127,36 +207,36 @@
                     success: function(data){
                         self.data.player = data;
                         self.result(self.templates.player(self.data.player));
-                        $('[data-toggle=tooltip]').tooltip()
+                        $('[data-toggle=tooltip]').tooltip();
                     }
                 });
             };
 
-            netronner.prototype.renderHash = function(_newHash) {
+            Netronner.prototype.renderHash = function(_newHash) {
                 if (location.hash && location.hash !== "#") {
                     var pieces = location.hash.slice(1).split("/");
                     var templateName = pieces.shift();
-                    if (typeof netronner.prototype[templateName] === "function") {
-                        netronner.prototype[templateName].apply(this, pieces);
+                    if (typeof Netronner.prototype[templateName] === "function") {
+                        Netronner.prototype[templateName].apply(this, pieces);
                     }
                 }
             };
             
-            netronner.prototype.activateNav = function(nav){
+            Netronner.prototype.activateNav = function(nav){
                 $("#nav li").removeClass("active");
                 $("#nav ." + nav).addClass("active");
             };
 
-            netronner.prototype.deactivateNavs = function(){
+            Netronner.prototype.deactivateNavs = function(){
                 $("#nav li").removeClass("active");
             };
 
-            netronner.prototype.anon = function() {
+            Netronner.prototype.anon = function() {
                 this.data.user = {};
                 this.user_result(this.templates.anon(this.data.user));
             }
 
-            netronner.prototype.logged = function(accessToken, id, username, userIcon) {
+            Netronner.prototype.logged = function(accessToken, id, username, userIcon) {
                 this.data.user = {
                     accessToken: accessToken,
                     id: id,
@@ -173,18 +253,29 @@
                 return new Date(megaSecs*1000000000 + secs*1000 + Math.floor(microSecs / 1000)).toLocaleString();
             });
 
-            var ron = null;
-
             $(document).ready(function() {
-                ron = new netronner();
-                authHandler = google.auth.handler.bind(this, ron);
+                //FIXME aliasing
+
+                var netronner = new Netronner();
+                // TODO: modify to have a extlike reader instead of a mappingfn
+                var awardAchiAchievementCombo = new Combobox({
+                    selector: ".award-combo.achievement",
+                    url: netronner.webapi.endpoint('achievements'),
+                    mappingFn: function(achievement){
+                        return [achievement.name, achievement.name];
+                    },
+                });
+                
+                //TODO: players combo
+        
+                objects.global().authHandler = Google.auth.handler.bind(this, netronner);
                 if (location.hash && location.hash !== "#") {
-                    ron.renderHash();
+                    netronner.renderHash();
                 } else {
-                    ron.timeline();
+                    netronner.timeline();
                 }
-                ron.anon();
-                window.onhashchange = ron.renderHash.bind(ron);
+                netronner.anon();
+                window.onhashchange = netronner.renderHash.bind(netronner);
             });
         </script>
         <style>
@@ -233,8 +324,32 @@
 
                 </div>
             </div>
-        </div> 
+        </div>
+        
+        <!-- modals -->
+        <div class="modal fade" id="award_window" tabindex="-1" role="dialog" aria-labelledby="awardAchievementLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                  <h4 class="modal-title" id="awardAchievementLabel">Award Achievement</h4>
+                </div>
+                <div class="modal-body">
+                    <form role="form">
+                        <div class="form-group award-combo player"></div>
+                        <div class="form-group award-combo achievement"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                  <button type="button" class="btn btn-primary" data-dismiss="modal">Award</button>
+                </div>
+              </div>
+            </div>
+        </div>
 
+
+        <!-- templates -->
         <script id="timeline-template" type="text/x-handlebars-template">
             {{#unless this}}
             <div class="row">
@@ -336,14 +451,14 @@
                 <div class="media-body">
                     <h2 class="media-heading">{{name}}</h2>
                     <br>
-                    <h4 class="media-heading">Achievements Unlocked</h4>
+                    <h3 class="media-heading">Achievements Unlocked</h3>
                     {{#each achievements}}
                         <div class="media" data-toggle="tooltip" title="{{description}}" data-placement="bottom">
                             <a class="pull-left" href="#achievements/{{name}}">
                               <img class="media-object" src="icons/{{icon}}" alt="{{name}}">
                             </a>
                             <div class="media-body">
-                                {{name}}
+                                <h4 class="media-heading">{{name}}</h4>
                             </div>
                         </div>
                     {{/each}}
@@ -388,25 +503,6 @@
                     data-target="#award_window">
                         Award achievement
                 </button>
-
-            
-                <div class="modal fade" id="award_window" tabindex="-1" role="dialog" aria-labelledby="awardAchievementLabel" aria-hidden="true">
-                    <div class="modal-dialog">
-                      <div class="modal-content">
-                        <div class="modal-header">
-                          <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                          <h4 class="modal-title" id="awardAchievementLabel">Award Achievement</h4>
-                        </div>
-                        <div class="modal-body">
-                          ...
-                        </div>
-                        <div class="modal-footer">
-                          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                          <button type="button" class="btn btn-primary" data-dismiss="modal">Award</button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
             </div>
             </div>
         </script>
