@@ -57,6 +57,13 @@
                 });
                 return removed;
             };
+
+            objects.provide = function(obj, property, initializer){
+                if(!obj.hasOwnProperty(property)){
+                    obj[property] = typeof initializer === 'Function' ? initializer(obj, property) : initializer;
+                }
+                return obj[property];
+            };
             
             objects.namespace('dbc.precondition');
             
@@ -72,6 +79,18 @@
                     }
                 });
             };
+            
+            objects.pluck = function(prop, obj){
+                return obj[prop];
+            };
+
+            objects.deepPluck = function(nestedProps, obj){
+                var props = nestedProps.split('.');
+                return props.reduce(function(o, nested){
+                    return o[nested];
+                }, obj);
+            };
+
 
             objects.namespace('Google.auth').handler = function(ron, authResult) {
                 if (authResult['status']['signed_in']) {
@@ -89,6 +108,8 @@
                     console.log('Sign-in failure: ' + authResult['error']);
                 }
             }
+            
+            objects.global().noop = function(){};
 
             function Webapi() {
                 this.baseUrl = "@@netronner.webapi.url@@";
@@ -101,6 +122,83 @@
             Webapi.prototype.request = function(endpoint, conf) {
                 $.ajax(objects.merge({url: this.endpoint(endpoint)}, conf));
             };
+            
+            objects.namespace('Anima.data');
+            
+            Anima.data.Model = function(/**/){
+                var fields = Array.prototype.slice.call(arguments, 0);
+                this.fieldCtors = fields.map(this._makeFieldCtor);
+            };
+            Anima.data.Model.prototype._makeFieldCtor = function(fieldDef){
+                if(typeof fieldDef === 'String'){
+                    return function(raw, data){
+                        data[fieldDef] = raw[fieldDef];
+                    };
+                }
+                if(typeof fieldDef === 'Function'){
+                    return fieldDef;
+                }
+                var name = fieldDef.name;
+                var mapping = fieldDef.mapping || name;
+                var convert = fieldDef.convert || function(v, raw){ return v; };
+                return function(raw, data){
+                    data[name] = convert(objects.deepPluck(mapping, raw), raw);
+                };
+            };
+            Anima.data.Model.prototype.makeRecord = function(raw){
+                return this.fieldCtors.reduce(function(newRecord, ctor){
+                    ctor(newRecord.raw, newRecord.data);
+                    return newRecord;
+                }, {data:{}, raw: raw}); //TODO: getters and maybeGetters. define record obj?
+            };
+            // url, fields
+            Anima.data.Store = function(config){
+                dbc.precondition.keysDefined(config, ["url"]);
+                this.url = config.url;
+                this.model = new Anima.data.Model(config.fields || []);
+                this.data = [];
+                this._events = {};
+            };
+            // callback
+            Anima.data.Store.load = function(options){
+                var self = this;
+                var callback = (typeof options === 'Function' ? options : options.callback) || noop;
+                $.ajax({
+                    url: self.url,
+                    success: function(elements){
+                        self.data = elements.map(self.model.makeRecord);
+                        callback();
+                        self.fireEvent('load', self.data, true);
+                        self.fireEvent('load:success', self.data);
+                    },
+                    error: function(){
+                        callback();
+                        self.fireEvent('load', [], false);
+                        self.fireEvent('load:failure');
+                    }
+                });
+            };
+            Anima.data.Store.on = function(event, handler){
+                var hls = objects.provide(this._events, event, {handlers:[], singles:[]});
+                hls.handlers.push(handler);
+            };
+            Anima.data.Store.once = function(event, handler){
+                var hls = objects.provide(this._events, event, {handlers:[], singles:[]});
+                hls.singles.push(handler);
+            };
+            Anima.data.Store.fireEvent = function(event /*, arguments*/){
+                var args = Array.prototype.slice.call(arguments, 1);
+                var scope = this;
+                if(!this._events[event]){
+                    return;
+                }
+                this._events[event].handlers.concat(this._events[event].singles).forEach(function(hl){
+                    hl.apply(scope, args);
+                });
+                this._events[event].singles = [];
+            };
+            
+            
             
             function Combobox(config){
                 dbc.precondition.keysDefined(config, ["selector", "url", "mappingFn"]);
