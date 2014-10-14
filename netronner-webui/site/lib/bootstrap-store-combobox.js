@@ -24,6 +24,7 @@
   * ================================ */
 
   var Combobox = function ( element, options ) {
+    dbc.precondition.keysDefined(options, 'store', 'matchField', 'valueField')
     this.options = $.extend({}, $.fn.combobox.defaults, options);
     this.$source = $(element);
     this.$container = this.setup();
@@ -33,8 +34,11 @@
     this.$menu = $(this.options.menu).appendTo('body');
     this.template = this.options.template || this.template
     this.matcher = this.options.matcher || this.matcher;
-    this.sorter = this.options.sorter || this.sorter;
     this.highlighter = this.options.highlighter || this.highlighter;
+    this.store = this.options.store;
+    this.matchField = this.options.matchField;
+    this.valueField = this.options.valueField;
+    this.itemTpl = Handlebars.compile(this.options.item);
     this.shown = false;
     this.selected = false;
     this.refresh();
@@ -67,32 +71,13 @@
       this.$container.removeClass('combobox-disabled');
     }
   , parse: function () {
-      var that = this
-        , map = {}
-        , source = []
-        , selected = false
-        , selectedValue = '';
-      this.$source.find('option').each(function() {
-        var option = $(this);
-        if (option.val() === '') {
-          that.options.placeholder = option.text();
-          return;
-        }
-        map[option.text()] = option.val();
-        source.push(option.text());
-        if (option.prop('selected')) {
-          selected = option.text();
-          selectedValue = option.val();
-        }
-      })
-      this.map = map;
-      if (selected) {
-        this.$element.val(selected);
-        this.$target.val(selectedValue);
-        this.$container.addClass('combobox-selected');
-        this.selected = true;
+      var storeIndex = {};
+      for(var r in this.store.data){
+          var df = r.get(this.matchField);
+          storeIndex[df] = r.get(this.valueField);
       }
-      return source;
+      this.storeIndex = storeIndex;
+      return this.store.data;
     }
 
   , transferAttributes: function() {
@@ -114,8 +99,7 @@
   , select: function () {
       var val = this.$menu.find('.active').attr('data-value');
       this.$element.val(this.updater(val)).trigger('change');
-      this.$target.val(this.map[val]).trigger('change');
-      this.$source.val(this.map[val]).trigger('change');
+      this.$target.val(this.storeIndex[val]).trigger('change');
       this.$container.addClass('combobox-selected');
       this.selected = true;
       return this.hide();
@@ -157,20 +141,18 @@
       return this.process(this.source);
     }
 
-  , process: function (items) {
+  , process: function (records) {
       var that = this;
 
-      items = $.grep(items, function (item) {
-        return that.matcher(item);
-      })
+      records = records.filter(function (record) {
+        return that.matcher(record.get(that.matchField));
+      });
 
-      items = this.sorter(items);
-
-      if (!items.length) {
+      if (!records.length) {
         return this.shown ? this.hide() : this;
       }
 
-      return this.render(items.slice(0, this.options.items)).show();
+      return this.render(records.slice(0, this.options.items)).show();
     }
 
   , template: function() {
@@ -185,21 +167,6 @@
       return ~item.toLowerCase().indexOf(this.query.toLowerCase());
     }
 
-  , sorter: function (items) {
-      var beginswith = []
-        , caseSensitive = []
-        , caseInsensitive = []
-        , item;
-
-      while (item = items.shift()) {
-        if (!item.toLowerCase().indexOf(this.query.toLowerCase())) {beginswith.push(item);}
-        else if (~item.indexOf(this.query)) {caseSensitive.push(item);}
-        else {caseInsensitive.push(item);}
-      }
-
-      return beginswith.concat(caseSensitive, caseInsensitive);
-    }
-
   , highlighter: function (item) {
       var query = this.query.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&');
       return item.replace(new RegExp('(' + query + ')', 'ig'), function ($1, match) {
@@ -207,17 +174,17 @@
       })
     }
 
-  , render: function (items) {
+  , render: function (records) {
       var that = this;
+      var rendered = records.map(function (record) {
+          var searchValue = record.data[that.searchField];
+          var tplContext = objects.shallowCopy(record.data);
+          tplContext['match'] = that.highlighter(searchValue);
+          return $(that.options.itemTpl(tplContext)).attr('data-value', searchValue);
+      });
 
-      items = $(items).map(function (i, item) {
-        i = $(that.options.item).attr('data-value', item);
-        i.find('a').html(that.highlighter(item));
-        return i[0];
-      })
-
-      items.first().addClass('active');
-      this.$menu.html(items);
+      rendered[0] && $(rendered[0]).addClass('active');
+      this.$menu.html(records);
       return this;
     }
 
@@ -270,19 +237,21 @@
   }
 
   , clearTarget: function () {
-    this.$source.val('');
     this.$target.val('');
     this.$container.removeClass('combobox-selected');
     this.selected = false;
   }
 
   , triggerChange: function () {
-    this.$source.trigger('change');
+    this.$target.trigger('change');
   }
 
   , refresh: function () {
-    this.source = this.parse();
-    this.options.items = this.source.length;
+    var self = this;
+    this.store.load(function(){
+        self.source = self.parse();
+        self.options.items = self.source.length;
+    });
   }
 
   , listen: function () {
@@ -391,7 +360,6 @@
       var val = this.$element.val();
       if (!this.selected && val !== '' ) {
         this.$element.val('');
-        this.$source.val('').trigger('change');
         this.$target.val('').trigger('change');
       }
       if (!this.mousedover && this.shown) {setTimeout(function () { that.hide(); }, 200);}
@@ -430,7 +398,7 @@
   $.fn.combobox.defaults = {
     bsVersion: '3'
   , menu: '<ul class="typeahead typeahead-long dropdown-menu"></ul>'
-  , item: '<li><a href="#"></a></li>'
+  , item: '<li><a href="#">{{match}}</a></li>'
   };
 
   $.fn.combobox.Constructor = Combobox;
