@@ -45,7 +45,15 @@
                     return memo[piece];
                 }, this.global());
             };
-
+            
+            objects.shallowCopy = function(original){
+                var copy = {};
+                for(var k in original){
+                    copy[k] = original[k];
+                }
+                return copy;
+            };
+            
             objects.remove = function(obj /*, properties... */){
                 var removed = {};
                 var toRemove = Array.prototype.slice.call(arguments, 1);
