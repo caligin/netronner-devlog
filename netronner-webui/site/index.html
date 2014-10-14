@@ -9,7 +9,7 @@
         <script src="lib/jquery-2.0.3.min.js"></script>    
         <script src="lib/handlebars-v1.3.0.js"></script>
         <script src="lib/bootstrap.min.js"></script>
-        <script src="lib/bootstrap-combobox.js"></script>
+        <script src="lib/bootstrap-store-combobox.js"></script>
                 
         <script type="text/javascript">
 
@@ -72,7 +72,8 @@
                     throw message;
                 }
             };
-            dbc.precondition.keysDefined = function(obj, keys){
+            dbc.precondition.keysDefined = function(obj /*[keys...] or keys...*/ ){
+                var keys = $.isArray(arguments[1]) ? arguments[1] : Array.prototype.slice.call(arguments, 1);
                 keys.forEach(function(k){
                     if(obj[k]===undefined){
                         throw "{0} must be defined".format(k);
@@ -197,8 +198,14 @@
                 });
                 this._events[event].singles = [];
             };
-            
-            
+            Anima.data.Store.prototype.findExact = function(field, value){
+                for(var r in this.data){
+                    if(r.get(field) === value){
+                        return [r];
+                    }
+                }
+                return [];
+            }
             
             function Combobox(config){
                 dbc.precondition.keysDefined(config, ["selector", "url", "mappingFn"]);
