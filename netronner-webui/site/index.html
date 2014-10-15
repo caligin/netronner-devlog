@@ -152,13 +152,27 @@
                 var convert = fieldDef.convert || function(v, raw){ return v; };
                 return function(raw, data){
                     data[name] = convert(objects.deepPluck(mapping, raw), raw);
+                    return data;
                 };
             };
             Anima.data.Model.prototype.makeRecord = function(raw){
-                return this.fieldCtors.reduce(function(newRecord, ctor){
-                    ctor(newRecord.raw, newRecord.data);
-                    return newRecord;
-                }, {data:{}, raw: raw}); //TODO: getters and maybeGetters. define record obj?
+                return new Record(this, raw);
+            };
+            
+            Anima.data.Record = function(model, raw){
+                var data = model.fieldCtors.reduce(function(newData, ctor){
+                    return ctor(raw, newData);
+                }, {});
+                this.data = data;
+                this.raw = raw;
+            };
+            Anima.data.Record.prototype.get = function(fieldName){
+                //FIXME this dows not allow to get nested stuff.
+                return this.data[fieldName];
+            };
+            Anima.data.Record.prototype.maybeGet = function(fieldName){
+                //FIXME this dows not allow to get nested stuff.
+                return this.data.hasOwnProperty(fieldName) ? [this.data[fieldName]] : [];
             };
             // url, fields
             Anima.data.Store = function(config){
