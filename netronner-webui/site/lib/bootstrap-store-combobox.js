@@ -16,6 +16,14 @@
  * limitations under the License.
  * ============================================================ */
 
+/**
+ * 
+ * Depends on:
+ * - jQuery
+ * - lambda-driver
+ * - data
+ */
+
 !function( $ ) {
 
  "use strict";

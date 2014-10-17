@@ -9,97 +9,11 @@
         <script src="lib/jquery-2.0.3.min.js"></script>    
         <script src="lib/handlebars-v1.3.0.js"></script>
         <script src="lib/bootstrap.min.js"></script>
+        <script src="lib/lambda-driver.js"></script>
+        <script src="lib/data.js"></script>
         <script src="lib/bootstrap-store-combobox.js"></script>
                 
         <script type="text/javascript">
-
-            String.prototype.format = function(){
-                var formatArgs = Array.prototype.slice.call(arguments);
-                return formatArgs.reduce(function(memo, arg, i){
-                    return memo.replace(new RegExp("\\{"+i+"\\}","g"), arg);
-                }, this.valueOf());
-            };
-
-            objects = {};
-
-            // merges n objects in given order (leftmost on bottom, rightmost on top)
-            objects.merge = function(){
-                return Array.prototype.slice.call(arguments).reduce(function(merged, mergee){
-                    for(var k in mergee){
-                        merged[k] = mergee[k];
-                    }
-                    return merged;
-                },{});
-            };
-            
-            objects.global = (function(){
-                var glob = this;
-                return function(){
-                    return glob;
-                };
-            })();
-            
-            objects.namespace = function(namespace){
-                return namespace.split('.').reduce(function(memo, piece){
-                    memo[piece] = {};
-                    return memo[piece];
-                }, this.global());
-            };
-            
-            objects.shallowCopy = function(original){
-                var copy = {};
-                for(var k in original){
-                    copy[k] = original[k];
-                }
-                return copy;
-            };
-            
-            objects.remove = function(obj /*, properties... */){
-                var removed = {};
-                var toRemove = Array.prototype.slice.call(arguments, 1);
-                toRemove.forEach(function(prop){
-                    if(obj.hasOwnProperty(prop)){
-                        removed[prop] = obj[prop];
-                        delete obj[prop];
-                    }
-                });
-                return removed;
-            };
-
-            objects.provide = function(obj, property, initializer){
-                if(!obj.hasOwnProperty(property)){
-                    obj[property] = typeof initializer === 'Function' ? initializer(obj, property) : initializer;
-                }
-                return obj[property];
-            };
-            
-            objects.namespace('dbc.precondition');
-            
-            dbc.precondition.defined = function(e, message){
-                if(e===undefined){
-                    throw message;
-                }
-            };
-            dbc.precondition.keysDefined = function(obj /*[keys...] or keys...*/ ){
-                var keys = $.isArray(arguments[1]) ? arguments[1] : Array.prototype.slice.call(arguments, 1);
-                keys.forEach(function(k){
-                    if(obj[k]===undefined){
-                        throw "{0} must be defined".format(k);
-                    }
-                });
-            };
-            
-            objects.pluck = function(prop, obj){
-                return obj[prop];
-            };
-
-            objects.deepPluck = function(nestedProps, obj){
-                var props = nestedProps.split('.');
-                return props.reduce(function(o, nested){
-                    return o[nested];
-                }, obj);
-            };
-
 
             objects.namespace('Google.auth').handler = function(ron, authResult) {
                 if (authResult['status']['signed_in']) {
@@ -117,8 +31,6 @@
                     console.log('Sign-in failure: ' + authResult['error']);
                 }
             }
-            
-            objects.global().noop = function(){};
 
             function Webapi() {
                 this.baseUrl = "@@netronner.webapi.url@@";
@@ -132,130 +44,6 @@
                 $.ajax(objects.merge({url: this.endpoint(endpoint)}, conf));
             };
             
-            objects.namespace('Anima.data');
-            
-            Anima.data.Model = function(/**/){
-                var fields = $.isArray(arguments[0]) ? arguments[0] : Array.prototype.slice.call(arguments, 0);
-                this.fieldCtors = fields.map(this._makeFieldCtor);
-            };
-            Anima.data.Model.prototype._makeFieldCtor = function(fieldDef){
-                if(typeof fieldDef === 'string'){
-                    return function(raw, data){
-                        data[fieldDef] = raw[fieldDef];
-                    };
-                }
-                if(typeof fieldDef === 'function'){
-                    return fieldDef;
-                }
-                var name = fieldDef.name;
-                var mapping = fieldDef.mapping || name;
-                var convert = fieldDef.convert || function(v, raw){ return v; };
-                return function(raw, data){
-                    data[name] = convert(objects.deepPluck(mapping, raw), raw);
-                    return data;
-                };
-            };
-            Anima.data.Model.prototype.makeRecord = function(raw){
-                return new Record(this, raw);
-            };
-            
-            Anima.data.Record = function(model, raw){
-                var data = model.fieldCtors.reduce(function(newData, ctor){
-                    return ctor(raw, newData);
-                }, {});
-                this.data = data;
-                this.raw = raw;
-            };
-            Anima.data.Record.prototype.get = function(fieldName){
-                //FIXME this dows not allow to get nested stuff.
-                return this.data[fieldName];
-            };
-            Anima.data.Record.prototype.maybeGet = function(fieldName){
-                //FIXME this dows not allow to get nested stuff.
-                return this.data.hasOwnProperty(fieldName) ? [this.data[fieldName]] : [];
-            };
-            // url, fields
-            Anima.data.Store = function(config){
-                dbc.precondition.keysDefined(config, ["url"]);
-                this.url = config.url;
-                this.model = new Anima.data.Model(config.fields || []);
-                this.data = [];
-                this._events = {};
-            };
-            // callback
-            Anima.data.Store.prototype.load = function(options){
-                var self = this;
-                var callback = (typeof options === 'function' ? options : options && options.callback) || noop;
-                $.ajax({
-                    url: self.url,
-                    success: function(elements){
-                        self.data = elements.map(self.model.makeRecord.bind(self.model));
-                        callback();
-                        self.fireEvent('load', self.data, true);
-                        self.fireEvent('load:success', self.data);
-                    },
-                    error: function(){
-                        callback();
-                        self.fireEvent('load', [], false);
-                        self.fireEvent('load:failure');
-                    }
-                });
-            };
-            Anima.data.Store.prototype.on = function(event, handler){
-                var hls = objects.provide(this._events, event, {handlers:[], singles:[]});
-                hls.handlers.push(handler);
-            };
-            Anima.data.Store.prototype.once = function(event, handler){
-                var hls = objects.provide(this._events, event, {handlers:[], singles:[]});
-                hls.singles.push(handler);
-            };
-            Anima.data.Store.prototype.fireEvent = function(event /*, arguments*/){
-                var args = Array.prototype.slice.call(arguments, 1);
-                var scope = this;
-                if(!this._events[event]){
-                    return;
-                }
-                this._events[event].handlers.concat(this._events[event].singles).forEach(function(hl){
-                    hl.apply(scope, args);
-                });
-                this._events[event].singles = [];
-            };
-            Anima.data.Store.prototype.findExact = function(field, value){
-                for(var r in this.data){
-                    if(r.get(field) === value){
-                        return [r];
-                    }
-                }
-                return [];
-            }
-            
-            function Combobox(config){
-                dbc.precondition.keysDefined(config, ["selector", "url", "mappingFn"]);
-                config.itemTpl && (this.optionTemplate = config.optionTemplate);
-                var containerEl = $(config.selector); 
-                containerEl.html('<select class="combobox form-control"><option></option></select>');
-                this.el = $("select", containerEl);
-                var comboboxOptions = objects.remove(config, 'menu', 'item', 'matcher', 'sorter', 'highlighter', 'template', 'bsVersion');
-                this.el.combobox(comboboxOptions);
-                this.cb = this.el.data().combobox;
-                var self = this;
-                $.ajax({
-                    url: config.url,
-                    success: function(options){
-                        self.el.html(self._renderOptions(options.map(config.mappingFn)));
-                        self.cb.refresh();
-                    },
-                    error: console.log.bind(console)
-                });
-            }
-            Combobox.prototype.optionTemplate = '<option value="{1}">{0}</option>';
-            Combobox.prototype._renderOptions = function(options){
-                var self = this;
-                return '<option></option>' + options.map(function(optionAndValue){
-                    return self.optionTemplate.format.apply(self.optionTemplate, optionAndValue);
-                }).join('');
-            };
-
             function Netronner() {
                 this.templates = {};
                 this.data = {};
@@ -385,12 +173,15 @@
 
                 var netronner = new Netronner();
                 // TODO: modify to have a extlike reader instead of a mappingfn
-                var awardAchiAchievementCombo = new Combobox({
-                    selector: ".award-combo.achievement",
-                    url: netronner.webapi.endpoint('achievements'),
-                    mappingFn: function(achievement){
-                        return [achievement.name, achievement.name];
-                    },
+                $(".award-combo.achievement").combobox({
+                    store: new Anima.data.Store({
+                        url: netronner.webapi.endpoint('achievements'),
+                        fields: ['name', 'description', 'icon']
+                    }),
+                    matchField: 'name',
+                    valueField: 'name',
+                    item: [].join('')
+
                 });
                 
                 //TODO: players combo
@@ -463,8 +254,12 @@
                 </div>
                 <div class="modal-body">
                     <form role="form">
-                        <div class="form-group award-combo player"></div>
-                        <div class="form-group award-combo achievement"></div>
+                        <div class="form-group">
+                            <select class="award-combo player combobox form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <select class="award-combo achievement combobox form-control"></select>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
