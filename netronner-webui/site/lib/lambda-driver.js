@@ -69,6 +69,13 @@ objects.deepPluck = function(nestedProps, obj) {
     }, obj);
 };
 
+objects.mixin = function(target, mixinCtor){
+    mixinCtor.call(target);
+    for(var method in mixinCtor.prototype){
+        target[method] = mixinCtor.prototype[method];
+    }
+};
+
 objects.global().noop = function() {
 };
 
@@ -86,4 +93,14 @@ dbc.precondition.keysDefined = function(obj /*[keys...] or keys...*/) {
             throw "{0} must be defined".format(k);
         }
     });
+};
+
+Array.prototype.isEmpty = function(){
+    return this.length === 0;
+};
+Array.prototype.fst = function(){
+    return this[0];
+};
+Array.prototype.snd = function(){
+    return this[1];
 };
