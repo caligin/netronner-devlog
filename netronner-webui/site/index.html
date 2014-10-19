@@ -55,6 +55,7 @@
                 this.templates.failure = Handlebars.compile($("#failure-template").html());
                 this.templates.anon = Handlebars.compile($("#anon-template").html());
                 this.templates.logged = Handlebars.compile($("#logged-template").html());
+                objects.mixin(this, Anima.Observable);
             };
             
             Netronner.prototype.failure = function(response) {
@@ -159,6 +160,7 @@
                     username : username,
                     userIcon: userIcon
                 };
+                this.fireEvent('user:login', this.data.user);
                 this.user_result(this.templates.logged(this.data.user));
             };
             
@@ -192,11 +194,38 @@
                         '</div>',
                         '</li>'
                     ].join('')
+                });
 
+                var playersStore = new Anima.data.Store({
+                    fields: [
+                        'id',
+                        {name :'name', mapping: 'displayName'},
+                        {name: 'portrait', mapping: 'image.url'}
+                    ],
+                    rootProperty: 'items'
+                });
+                var playersCombo = $(".award-combo.player").combobox({
+                    store: playersStore,
+                    matchField: 'name',
+                    valueField: 'id',
+                    item: [
+                        '<li>',
+                        '<div class="media">',
+                        '<a class="pull-left" href="#">',
+                        '  <img class="media-object img-rounded" src="{{portrait}}" alt="{{name}}">',
+                        '</a>',
+                        '<div class="media-body">',
+                        '   <h4 class="media-heading">{{{match}}}</h4>',
+                        '</div>',
+                        '</div>',
+                        '</li>'
+                    ].join('')
+                });
+                netronner.on('user:login', function(userData){
+                    playersStore.url = 'https://www.googleapis.com/plus/v1/people/me/people/visible?access_token=' + userData.accessToken;
+                    playersCombo.data().combobox.refresh();
                 });
                 
-                //TODO: players combo
-        
                 objects.global().authHandler = Google.auth.handler.bind(this, netronner);
                 if (location.hash && location.hash !== "#") {
                     netronner.renderHash();
@@ -413,7 +442,7 @@
                         data-callback="authHandler"
                         data-clientid="@@google.client.id@@"
                         data-cookiepolicy="single_host_origin"
-                        data-scope="profile">
+                        data-scope="https://www.googleapis.com/auth/plus.login">
                     </span>
                 </span>
             </div>
