@@ -82,13 +82,17 @@ next_prev(Prev) ->
     Prev + 1.
 
 page(_State, latest) ->
-    {ok, Fetched} = riakc_pb_socket:get(whereis(timeline_riakc), ?BUCKET, ?LATEST),
-    binary_to_term(riakc_obj:get_value(Fetched));
+    page_or_empty(?LATEST);
 page(_State, none) ->
     throw(notfound);
 page(_State, PageIndex) when is_integer(PageIndex) ->
-    {ok, Fetched} = riakc_pb_socket:get(whereis(timeline_riakc), ?BUCKET, integer_to_binary(PageIndex)),
-    binary_to_term(riakc_obj:get_value(Fetched)).
+    page_or_empty(integer_to_binary(PageIndex)).
+
+page_or_empty(PageTerm) ->
+    case riakc_pb_socket:get(whereis(timeline_riakc), ?BUCKET, PageTerm) of
+        {ok, Fetched} -> binary_to_term(riakc_obj:get_value(Fetched));
+        {error, notfound} -> {none, []}
+    end.
 
 -spec fetch_or_make_latest() -> riakc_obj:riakc_obj().
 fetch_or_make_latest() ->
