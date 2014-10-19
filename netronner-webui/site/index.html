@@ -6,6 +6,7 @@
         <link rel="shortcut icon" href="favicon.ico" />
         <link rel="stylesheet" type="text/css" href="lib/bootstrap.min.css" >
         <link rel="stylesheet" type="text/css" href="lib/bootstrap-combobox.css" >
+        <link rel="stylesheet" type="text/css" href="netronner.css" >
         <script src="lib/jquery-2.0.3.min.js"></script>    
         <script src="lib/handlebars-v1.3.0.js"></script>
         <script src="lib/bootstrap.min.js"></script>
@@ -169,10 +170,8 @@
             });
 
             $(document).ready(function() {
-                //FIXME aliasing
 
                 var netronner = new Netronner();
-                // TODO: modify to have a extlike reader instead of a mappingfn
                 $(".award-combo.achievement").combobox({
                     store: new Anima.data.Store({
                         url: netronner.webapi.endpoint('achievements'),
@@ -180,7 +179,19 @@
                     }),
                     matchField: 'name',
                     valueField: 'name',
-                    item: [].join('')
+                    item: [
+                        '<li>',
+                        '<div class="media">',
+                        '<a class="pull-left" href="#">',
+                        '  <img class="media-object img-rounded" src="icons/{{icon}}" alt="{{name}}">',
+                        '</a>',
+                        '<div class="media-body">',
+                        '   <h4 class="media-heading">{{{match}}}</h4>',
+                        '    {{description}}',
+                        '</div>',
+                        '</div>',
+                        '</li>'
+                    ].join('')
 
                 });
                 

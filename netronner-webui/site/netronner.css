@@ -1,0 +1,9 @@
+.dropdown-menu>.active>.media {
+color: #fff;
+text-decoration: none;
+outline: 0;
+background-color: #428bca;
+}
+.combobox-container ul.dropdown-menu{
+    width: 100%;
+}

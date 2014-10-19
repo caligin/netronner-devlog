@@ -80,10 +80,10 @@
     }
   , parse: function () {
       var storeIndex = {};
-      for(var r in this.store.data){
+      this.store.data.forEach(function(r){
           var df = r.get(this.matchField);
           storeIndex[df] = r.get(this.valueField);
-      }
+      }.bind(this));
       this.storeIndex = storeIndex;
       return this.store.data;
     }
@@ -185,14 +185,14 @@
   , render: function (records) {
       var that = this;
       var rendered = records.map(function (record) {
-          var searchValue = record.data[that.searchField];
+          var searchValue = record.data[that.matchField];
           var tplContext = objects.shallowCopy(record.data);
           tplContext['match'] = that.highlighter(searchValue);
-          return $(that.options.itemTpl(tplContext)).attr('data-value', searchValue);
+          return $(that.itemTpl(tplContext)).attr('data-value', searchValue);
       });
 
       rendered[0] && $(rendered[0]).addClass('active');
-      this.$menu.html(records);
+      this.$menu.html(rendered);
       return this;
     }
 

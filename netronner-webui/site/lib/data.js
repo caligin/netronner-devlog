@@ -15,6 +15,7 @@ Anima.data.Model.prototype._makeFieldCtor = function(fieldDef) {
     if (typeof fieldDef === 'string') {
         return function(raw, data) {
             data[fieldDef] = raw[fieldDef];
+            return data;
         };
     }
     if (typeof fieldDef === 'function') {
@@ -31,7 +32,7 @@ Anima.data.Model.prototype._makeFieldCtor = function(fieldDef) {
     };
 };
 Anima.data.Model.prototype.makeRecord = function(raw) {
-    return new Record(this, raw);
+    return new Anima.data.Record(this, raw);
 };
 
 Anima.data.Record = function(model, raw) {
