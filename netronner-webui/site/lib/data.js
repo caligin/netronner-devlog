@@ -7,7 +7,7 @@
 
 objects.namespace('Anima.data');
 
-Anima.data.Model = function(/**/) {
+Anima.data.Model = function(/*[fields...] or fields...*/) {
     var fields = Array.isArray(arguments[0]) ? arguments[0] : Array.prototype.slice.call(arguments, 0);
     this.fieldCtors = fields.map(this._makeFieldCtor);
 };
@@ -52,19 +52,25 @@ Anima.data.Record.prototype.maybeGet = function(fieldName) {
 };
 // url, fields
 Anima.data.Store = function(config) {
-    dbc.precondition.keysDefined(config, ["url"]);
     this.url = config.url;
+    this.rootProperty = config.rootProperty ? [config.rootProperty] : [];
     this.model = new Anima.data.Model(config.fields || []);
-    this.data = [];
-    this._events = {};
+    this.data = config.data || [];
+    objects.mixin(this, Anima.Observable);
 };
 // callback
 Anima.data.Store.prototype.load = function(options) {
     var self = this;
     var callback = (typeof options === 'function' ? options : options && options.callback) || noop;
+    if(!this.url){
+        callback();
+        self.fireEvent('load', self.data, null);
+        return;
+    }
     $.ajax({
         url: self.url,
-        success: function(elements) {
+        success: function(data) {
+            var elements = self.rootProperty.isEmpty() ? data : data[self.rootProperty.fst()]
             self.data = elements.map(self.model.makeRecord.bind(self.model));
             callback();
             self.fireEvent('load', self.data, true);
@@ -77,15 +83,28 @@ Anima.data.Store.prototype.load = function(options) {
         }
     });
 };
-Anima.data.Store.prototype.on = function(event, handler) {
+
+Anima.data.Store.prototype.findExact = function(field, value) {
+    for (var r in this.data) {
+        if (r.get(field) === value) {
+            return [r];
+        }
+    }
+    return [];
+};
+
+Anima.Observable = function() {
+    this._events = {};
+};
+Anima.Observable.prototype.on = function(event, handler) {
     var hls = objects.provide(this._events, event, {handlers: [], singles: []});
     hls.handlers.push(handler);
 };
-Anima.data.Store.prototype.once = function(event, handler) {
+Anima.Observable.prototype.once = function(event, handler) {
     var hls = objects.provide(this._events, event, {handlers: [], singles: []});
     hls.singles.push(handler);
 };
-Anima.data.Store.prototype.fireEvent = function(event /*, arguments*/) {
+Anima.Observable.prototype.fireEvent = function(event /*, arguments*/) {
     var args = Array.prototype.slice.call(arguments, 1);
     var scope = this;
     if (!this._events[event]) {
@@ -96,11 +115,3 @@ Anima.data.Store.prototype.fireEvent = function(event /*, arguments*/) {
     });
     this._events[event].singles = [];
 };
-Anima.data.Store.prototype.findExact = function(field, value) {
-    for (var r in this.data) {
-        if (r.get(field) === value) {
-            return [r];
-        }
-    }
-    return [];
-}
