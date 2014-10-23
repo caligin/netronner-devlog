@@ -5,8 +5,7 @@
         {<<"content-type">>, <<"application/json">>},
         {<<"access-control-allow-origin">>, <<"*">>}
     ]).
-
-
+-define(DEFAULT_CORS_ALLOWED_HEADERS, "Origin, X-Requested-With, Content-Type, Accept").
 
 init(_Type, Req, [Feature, Action]) ->
     {Method, _} = cowboy_req:method(Req),
@@ -21,6 +20,10 @@ handle(Req, {players, load, <<"GET">>}) ->
     {PlayerId, _} = cowboy_req:binding(player_id, Req),
     Player = player_to_json(players:load(PlayerId)),
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS, Player, Req),
+    {ok, Req2, undefined};
+handle(Req, {players, award_achievement, <<"OPTIONS">>}) -> %% CORS preflight
+    CorsHeaders = cors_allow(["POST"],["Authorization"]),
+    {ok, Req2} = cowboy_req:reply(200, ?HEADERS ++ CorsHeaders, Req),
     {ok, Req2, undefined};
 handle(Req, {players, award_achievement, <<"POST">>}) ->
     case gen_auth:is_authorized(google_token, Req) of
@@ -66,6 +69,12 @@ page_index_binding(Req) ->
         <<"latest">> -> latest;
         _ -> binary_to_integer(PageIndexBin)
     end.
+
+cors_allow(Methods, Headers) ->
+    [
+        {<<"access-control-allow-methods">>, list_to_binary(string:join(Methods, ", "))},
+        {<<"access-control-allow-headers">>, list_to_binary(string:join([?DEFAULT_CORS_ALLOWED_HEADERS | Headers], ", "))}
+    ].
 
 -spec achievement_to_map(achievement:achievement()) -> map().
 achievement_to_map({Name, Description, Icon}) -> 
