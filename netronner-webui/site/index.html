@@ -174,7 +174,7 @@
             $(document).ready(function() {
 
                 var netronner = new Netronner();
-                $(".award-combo.achievement").combobox({
+                var achievementsCombo = $(".award-combo.achievement").combobox({
                     store: new Anima.data.Store({
                         url: netronner.webapi.endpoint('achievements'),
                         fields: ['name', 'description', 'icon']
@@ -226,6 +226,32 @@
                     playersCombo.data().combobox.refresh();
                 });
                 
+                $('#award_window button.award').click(function(e){
+                    var playerId = playersCombo.val();
+                    var achievement = achievementsCombo.val();
+                    netronner.webapi.request('players/{0}/award_achievement'.format(playerId),{
+                        type: "POST",
+                        contentType: 'application/x-www-form-urlencoded',
+                        data: {
+                            achievement: achievement
+                        },
+                        headers: {
+                            Authorization: 'Bearer {0}'.format(netronner.data.user.accessToken)
+                        },
+                        complete: function(xhr){
+                            // jq does not support 2xx successes, 200 only. c'mon, it's 2014!
+                            if(+(""+xhr.status)[0] === 2){
+                                $('#award_window').modal('hide');
+                            } else {
+                                $('#award_window .error-area').html('An error occurred. Retry later or consult the error log and contact an andmin.');
+                            }
+                        }
+                    });
+                });
+                $('#award_window').on('hidden.bs.modal', function(){
+                    $('#award_window .error-area').html('');
+                });
+                
                 objects.global().authHandler = Google.auth.handler.bind(this, netronner);
                 if (location.hash && location.hash !== "#") {
                     netronner.renderHash();
@@ -246,6 +272,7 @@
                 padding: 0 0 60px;
             }
             #wrap > .container { padding: 60px 15px 0; }
+            #award_window .error-area {color: red;}
         </style>
 
     </head>
@@ -301,10 +328,11 @@
                             <select class="award-combo achievement combobox form-control"></select>
                         </div>
                     </form>
+                    <div class="error-area"></div>
                 </div>
                 <div class="modal-footer">
                   <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                  <button type="button" class="btn btn-primary" data-dismiss="modal">Award</button>
+                  <button type="button" class="btn btn-primary award">Award</button>
                 </div>
               </div>
             </div>
