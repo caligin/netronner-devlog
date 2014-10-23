@@ -108,6 +108,8 @@
       var val = this.$menu.find('.active').attr('data-value');
       this.$element.val(this.updater(val)).trigger('change');
       this.$target.val(this.storeIndex[val]).trigger('change');
+      this.$source.html('<option value="{0}"></option>'.format(this.storeIndex[val]));
+      this.$source.val(this.storeIndex[val]).trigger('change');
       this.$container.addClass('combobox-selected');
       this.selected = true;
       return this.hide();
@@ -406,7 +408,7 @@
   $.fn.combobox.defaults = {
     bsVersion: '3'
   , menu: '<ul class="typeahead typeahead-long dropdown-menu"></ul>'
-  , item: '<li><a href="#">{{match}}</a></li>'
+  , item: '<li><a href="#">{{{match}}}</a></li>'
   };
 
   $.fn.combobox.Constructor = Combobox;
