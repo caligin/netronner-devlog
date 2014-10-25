@@ -1,9 +1,0 @@
-{application, authorization, [
-    {description, "Authorization modules"},
-    {vsn, "1"},
-    {applications, [kernel, stdlib, inets, jiffy, google]},
-    {modules, [gen_auth, google_token, administrative, noauth, principal]},
-    {env, [
-        {google_api_client_id, <<"ID HERE">>}
-    ]}
-]}.
