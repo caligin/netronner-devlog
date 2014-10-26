@@ -1,8 +1,10 @@
 {application, aaa, [
     {description, "AAA modules"},
     {vsn, "1"},
+    {registered, [aaa_application, aaa_supervisor, google_viral_authorization]},
     {applications, [kernel, stdlib, inets, jiffy, google]},
-    {modules, [gen_auth, google_token, administrative, noauth, principal]},
+    {modules, [aaa_application, administrative, gen_aaa, google_token, google_viral_authorization, noauth, principal]},
+    {mod, { aaa_application, []}},
     {env, [
         {google_api_client_id, <<"ID HERE">>}
     ]}

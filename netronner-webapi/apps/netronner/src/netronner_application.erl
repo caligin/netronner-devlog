@@ -10,6 +10,9 @@ start(_StartType, _StartArgs) ->
     Acceptors = application:get_env(netronner, acceptors, 100),
 
     ok = players_events:add_handler(netronner_events_publisher), 
+    ok = players_events:add_handler(netronner_authorization_infector), 
+
+    spawn(fun netronner_authorization_infector:initialize_infection_list/0),
 
     Dispatcher = cowboy_router:compile([
         {'_', [

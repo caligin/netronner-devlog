@@ -1,7 +1,7 @@
 -module(administrative).
--behaviour(gen_authentication).
+-behaviour(gen_aaa).
 
--export([authenticate/1, principal/1]).
+-export([authenticate/1, principal/1, authorize/1]).
 
 authenticate(Req) ->
     {{Ip, _Port}, _} =  cowboy_req:peer(Req),
@@ -12,3 +12,6 @@ authenticate(Req) ->
 
 principal(_Req) ->
     principal:make(<<"noid">>, <<"Administrator">>).
+
+authorize(_Principal) ->
+    true.

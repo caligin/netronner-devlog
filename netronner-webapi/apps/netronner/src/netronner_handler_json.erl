@@ -26,8 +26,9 @@ handle(Req, {players, award_achievement, <<"OPTIONS">>}) -> %% CORS preflight
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS ++ CorsHeaders, Req),
     {ok, Req2, undefined};
 handle(Req, {players, award_achievement, <<"POST">>}) ->
-    case gen_auth:is_authorized(google_token, Req) of
+    case gen_aaa:authenticate(google_token, Req) of
         ok -> 
+            true = gen_aaa:authorize(google_token, gen_aaa:principal(google_token, Req)),
             {ok, RequestParams, Req2} = cowboy_req:body_qs(Req),
             {PlayerId, _} = cowboy_req:binding(player_id, Req),
             {_, AchievementName} = lists:keyfind(<<"achievement">>, 1, RequestParams),
@@ -43,7 +44,7 @@ handle(Req, {achievements, list_or_set, <<"GET">>}) ->
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS, achievements_to_json(Achievements), Req),
     {ok, Req2, undefined};
 handle(Req, {achievements, list_or_set, <<"PUT">>}) ->
-    case gen_auth:is_authorized(administrative, Req) of
+    case gen_aaa:authenticate(administrative, Req) of
         ok ->
             {ok, Data, Req2} = cowboy_req:body(Req),
             Achievements = achievements:from_json(Data),
