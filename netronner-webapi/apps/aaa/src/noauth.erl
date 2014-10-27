@@ -10,4 +10,4 @@ principal(_Req) ->
     error(no_principal).
 
 authorize(_Principal) ->
-    true.
+    ok.

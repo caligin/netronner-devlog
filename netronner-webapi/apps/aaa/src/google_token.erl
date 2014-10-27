@@ -5,7 +5,11 @@
 -export([authenticate/1, principal/1, authorize/1]).
 
 authenticate(Req) ->
-    Token = access_token_from_req(Req),
+    authenticate(Req, extract_maybe_token(Req)).
+
+authenticate(_Req, []) ->
+    {error, 401, [{<<"WWW-Authenticate">>, <<"Bearer realm=\"netronner\"">>}]};
+authenticate(_Req, [Token]) ->
     {ok, <<ClientId/binary>>} = application:get_env(aaa, google_api_client_id),
     case google:validate_access_token(Token, ClientId) of
         ok -> ok;
@@ -13,16 +17,21 @@ authenticate(Req) ->
     end.
 
 principal(Req) ->
-    Token = access_token_from_req(Req),
+    [Token] = extract_maybe_token(Req),
     GoogleUser = google:user_profile(Token, <<"me">>),
     user_to_principal(GoogleUser).
 
 authorize(Principal) ->
-    google_viral_authorization:is_infected(principal:id(Principal)).
+    case google_viral_authorization:is_infected(principal:id(Principal)) of
+        true -> ok;
+        false -> {error, 401, [{<<"WWW-Authenticate">>, <<"Bearer error=\"invalid_token\" error_description=\"unauthorized\"">>}]}
+    end.
 
-access_token_from_req(Req) -> 
-    { <<"Bearer ", AccessToken/binary>>, _} = cowboy_req:header(<<"authorization">>, Req), %% FIXME this bombs on a malformed token, want to return 401...
-    google:access_token_make(AccessToken).
+extract_maybe_token(Req) -> 
+    case cowboy_req:header(<<"authorization">>, Req) of
+        { undefined, _} -> [];
+        { <<"Bearer ", AccessToken/binary>>, _} -> [google:access_token_make(AccessToken)]
+    end.
 
 user_to_principal(GoogleUser) ->
     Id = google:user_id(GoogleUser),

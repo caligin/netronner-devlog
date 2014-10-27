@@ -14,4 +14,4 @@ principal(_Req) ->
     principal:make(<<"noid">>, <<"Administrator">>).
 
 authorize(_Principal) ->
-    true.
+    ok.
