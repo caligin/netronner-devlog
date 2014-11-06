@@ -242,9 +242,17 @@
                             // jq does not support 2xx successes, 200 only. c'mon, it's 2014!
                             if(+(""+xhr.status)[0] === 2){
                                 $('#award_window').modal('hide');
-                            } else {
-                                $('#award_window .error-area').html('An error occurred. Retry later or consult the error log and contact an andmin.');
+                                return;
                             }
+                            if(xhr.status === 401 && xhr.getResponseHeader("WWW-Authenticate").indexOf('"unauthorized"') !== -1){
+                                $('#award_window .error-area').html('You don\'t have permission to award achievements. It is currently required to own at least one achievement before awarding.');
+                                return;
+                            }
+                            if(xhr.status === 401){
+                                $('#award_window .error-area').html('Authentication failed. Try to refresh the page or login again.');
+                                return;
+                            }
+                            $('#award_window .error-area').html('An error occurred. Retry later or consult the error log and contact an andmin.');
                         }
                     });
                 });

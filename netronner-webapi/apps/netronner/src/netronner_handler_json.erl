@@ -3,7 +3,8 @@
 -export([init/3, handle/2, terminate/3]).
 -define(HEADERS, [
         {<<"content-type">>, <<"application/json">>},
-        {<<"access-control-allow-origin">>, <<"*">>}
+        {<<"access-control-allow-origin">>, <<"*">>},
+        {<<"access-control-expose-headers">>, <<"www-authenticate">>}
     ]).
 -define(DEFAULT_CORS_ALLOWED_HEADERS, "Origin, X-Requested-With, Content-Type, Accept").
 
@@ -26,33 +27,33 @@ handle(Req, {players, award_achievement, <<"OPTIONS">>}) -> %% CORS preflight
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS ++ CorsHeaders, Req),
     {ok, Req2, undefined};
 handle(Req, {players, award_achievement, <<"POST">>}) ->
-    case gen_auth:is_authorized(google_token, Req) of
-        ok -> 
+    case gen_aaa:chain(google_token, Req) of
+        {ok, _} -> 
             {ok, RequestParams, Req2} = cowboy_req:body_qs(Req),
             {PlayerId, _} = cowboy_req:binding(player_id, Req),
             {_, AchievementName} = lists:keyfind(<<"achievement">>, 1, RequestParams),
             ok = players:award_achievement(PlayerId, AchievementName),
             {ok, Req3} = cowboy_req:reply(201, ?HEADERS, Req2),
             {ok, Req3, undefined};
-        {error, StatusCode, Headers} ->
-            {ok, Req4} = cowboy_req:reply(StatusCode, Headers, Req),
-            {ok, Req4, undefined}
+        {error, Status, Headers} ->
+            {ok, Req2} = cowboy_req:reply(Status, ?HEADERS ++ Headers, Req),
+            {ok, Req2, undefined}
         end;
 handle(Req, {achievements, list_or_set, <<"GET">>}) ->
     Achievements = achievements:list(),
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS, achievements_to_json(Achievements), Req),
     {ok, Req2, undefined};
 handle(Req, {achievements, list_or_set, <<"PUT">>}) ->
-    case gen_auth:is_authorized(administrative, Req) of
-        ok ->
+    case gen_aaa:chain(administrative, Req) of
+        {ok, _} ->
             {ok, Data, Req2} = cowboy_req:body(Req),
             Achievements = achievements:from_json(Data),
             ok = achievements:set(Achievements),
             {ok, Req3} = cowboy_req:reply(200, ?HEADERS, Req2),
             {ok, Req3, undefined};
-        {error, StatusCode, Headers} ->
-            {ok, Req4} = cowboy_req:reply(StatusCode, Headers, Req),
-            {ok, Req4, undefined}
+        {error, Status, Headers} ->
+            {ok, Req2} = cowboy_req:reply(Status, ?HEADERS ++ Headers, Req),
+            {ok, Req2, undefined}
         end;
 handle(Req, {_, _, Method }) ->
     {ok, Req2} = cowboy_req:reply(405, ?HEADERS, jiffy:encode({[{unsupported_method, Method}]}), Req),
