@@ -26,6 +26,6 @@ Then, how to deploy?
 
 I installed Docker on Iris (one of my machines) right now, and the first step towards the deployments is to dockerize the toy. I'm unsure about using one or two containers (api + ui), I guess it depends on where I'm going to deploy it. I have a virtual box but I can't install docker on it, so I'm going to look for a docker hosting service.
 
-After that, I can start the refactoring/reorganization of all the codebase and tools. And start the [Andorid](http://www.android.com/) part of the project too, as I am discussing right now with Angelo.
+After that, I can start the refactoring/reorganization of all the codebase and tools. And start the [Andorid](http://www.android.com/) part of the project too, as I am discussing right now with [shwb](https://github.com/shwb).
 
 Ok this is it for now, I'll post an update when things are ready!
