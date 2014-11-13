@@ -6,11 +6,9 @@
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
 -export([start_link/0]).
 
--define(BUCKET, <<"timeline">>).
--define(LATEST, <<"latest">>).
 -define(PAGE_SIZE, 20).
 
--type page() :: { Previous::integer() | none, [event:event()]}.
+-type page() :: { Page::integer() | latest, Previous::integer() | none, [event:event()]}.
 
 
 -spec start_link() -> {ok,pid()} | ignore | {error, {already_started, pid()} | term()}.
@@ -32,6 +30,8 @@ page_to_dto({Prev, Events}) ->
     }.
 
 init([]) ->
+    %% TODO: configurable file name
+    dets:open_file(events, []),
     {ok, new_state()}.
 
 handle_cast(_Msg, State) ->
@@ -51,6 +51,7 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 terminate(_Reason, _State) ->
+    ok = dets:close(events),
     ok.
 
 
@@ -58,21 +59,18 @@ new_state() ->
     #{}.
 
 append(_State, Event) ->
-    LatestObj = fetch_or_make_latest(),
-    {Prev, Events} = binary_to_term(riakc_obj:get_value(LatestObj)),
-    EventsNum = length(Events),
+    {latest, Prev, Events} = fetch_or_make_latest(),
+    EventsCount = length(Events),
     if
-        EventsNum < ?PAGE_SIZE ->
-            NewLatestVal = term_to_binary({Prev, [Event | Events]}),
-            NewNumberedLatestObj = riakc_obj:new(?BUCKET, integer_to_binary(next_prev(Prev)), NewLatestVal),
-            NewLatestObj = riakc_obj:update_value(LatestObj, NewLatestVal),
-            ok = riakc_pb_socket:put(whereis(timeline_riakc), NewNumberedLatestObj),
-            ok = riakc_pb_socket:put(whereis(timeline_riakc), NewLatestObj),
+        EventsCount < ?PAGE_SIZE ->
+            NewLatest = {latest, Prev, [Event | Events]},
+            NewNumberedLatest = {next_prev(Prev), Prev, [Event | Events]},
+            ok = dets:insert(events, NewLatest),
+            ok = dets:insert(events, NewNumberedLatest),
             ok;
         true ->
-            NewLatestVal = term_to_binary({next_prev(Prev), [Event]}),
-            NewLatestObj = riakc_obj:update_value(LatestObj, NewLatestVal),
-            ok = riakc_pb_socket:put(whereis(timeline_riakc), NewLatestObj),
+            NewLatest = {latest, next_prev(Prev), [Event]},
+            ok = dets:insert(events, NewLatest),
             ok
     end.
 
@@ -81,26 +79,25 @@ next_prev(none) ->
 next_prev(Prev) ->
     Prev + 1.
 
-page(_State, latest) ->
-    page_or_empty(?LATEST);
 page(_State, none) ->
     throw(notfound);
+page(_State, latest) ->
+    page_or_empty(latest);
 page(_State, PageIndex) when is_integer(PageIndex) ->
-    page_or_empty(integer_to_binary(PageIndex)).
+    page_or_empty(PageIndex).
 
 page_or_empty(PageTerm) ->
-    case riakc_pb_socket:get(whereis(timeline_riakc), ?BUCKET, PageTerm) of
-        {ok, Fetched} -> binary_to_term(riakc_obj:get_value(Fetched));
-        {error, notfound} -> {none, []}
+    case dets:lookup(events, PageTerm) of
+        [{_Page, Prev, Events}] -> {Prev, Events};
+        [] -> {none, []}
     end.
 
--spec fetch_or_make_latest() -> riakc_obj:riakc_obj().
+-spec fetch_or_make_latest() -> page().
 fetch_or_make_latest() ->
-    case riakc_pb_socket:get(whereis(timeline_riakc), ?BUCKET, ?LATEST) of
-        {ok, Latest} -> Latest;
-        {error,notfound} -> 
-            EmptyLatest = {none, []},
-            EmptyLatestLocal = riakc_obj:new(?BUCKET, ?LATEST, term_to_binary(EmptyLatest)),
-            {ok, EmptyLatestObj} = riakc_pb_socket:put(whereis(timeline_riakc), EmptyLatestLocal, [return_body]),
-            EmptyLatestObj
+    case dets:lookup(events, latest) of
+        [Latest] -> Latest;
+        [] -> 
+            EmptyLatest = {latest, none, []},
+            ok = dets:insert(events, EmptyLatest),
+            EmptyLatest
     end.

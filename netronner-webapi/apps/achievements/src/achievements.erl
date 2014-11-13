@@ -6,10 +6,6 @@
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
 -export([start_link/0]).
 
--define(BUCKET, <<"achievements">>).
--define(KEY, <<"achievements">>).
-
-
 -spec start_link() -> {ok,pid()} | ignore | {error, {already_started, pid()} | term()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -41,7 +37,9 @@ decoded_to_achievements([], Converted) ->
     Converted.
 
 init([]) ->
-    {ok, new_state()}.
+    %% TODO: configurable file location
+    {ok, achievements} = dets:open_file(achievements,[]),
+    {ok, []}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -50,8 +48,8 @@ handle_call({list}, _From, State) ->
     Achievements = list(State),
     {reply, Achievements, State};
 handle_call({set, Achievements}, _From, State) ->
-    {ok, NewState} = set(State, Achievements),
-    {reply, ok, NewState};
+    ok = set(State, Achievements),
+    {reply, ok, State};
 handle_call({load, AchievementName}, _From, State) ->
     Result = load(State, AchievementName),
     {reply, Result, State};
@@ -65,31 +63,18 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 terminate(_Reason, _State) ->
+    ok = dets:close(achievements),
     ok.
 
-
-new_state() ->
-    #{}.
-
 list(_State) ->
-    Achievements = fetch_document(),
-    maps:values(Achievements).
+    dets:foldl(fun(El, Memo) -> [El|Memo] end, [], achievements).
 
 set(_State, NewAchievements) ->
     %% TODO: validation
-    NewState = maps:from_list(lists:map(fun(Achievement) -> {achievement:name(Achievement), Achievement} end, NewAchievements)),
-    Obj = riakc_obj:new(?BUCKET, ?KEY, term_to_binary(NewState)),
-    ok = riakc_pb_socket:put(whereis(achievements_riakc), Obj),
-    {ok, NewState}.
+    dets:init_table(achievements, fun(_T) -> {NewAchievements, fun(_T) -> end_of_input end} end).
 
 load(_State, AchievementName) ->
-    case maps:find(AchievementName, fetch_document()) of
-        {ok, Achievement} -> {ok, Achievement};
-        error -> notfound
-    end.
-
-fetch_document() ->
-    case riakc_pb_socket:get(whereis(achievements_riakc), ?BUCKET, ?KEY) of
-        {ok, Fetched} -> binary_to_term(riakc_obj:get_value(Fetched));
-        {error,notfound} -> #{}
+    case dets:lookup(achievements, AchievementName) of
+        [Achievement] -> {ok, Achievement};
+        [] -> notfound
     end.
