@@ -71,7 +71,7 @@ list(_State) ->
 
 set(_State, NewAchievements) ->
     %% TODO: validation
-    dets:init_table(achievements, fun(_T) -> {NewAchievements, fun(_T) -> end_of_input end} end).
+    dets:init_table(achievements, fun(_) -> {NewAchievements, fun(_) -> end_of_input end} end).
 
 load(_State, AchievementName) ->
     case dets:lookup(achievements, AchievementName) of

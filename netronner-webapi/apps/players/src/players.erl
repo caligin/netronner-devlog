@@ -55,7 +55,7 @@ terminate(_Reason, _State) ->
 new_state() ->
     #{}.
 
-load(State, PlayerId) ->
+load(_State, PlayerId) ->
     dets:lookup(players, PlayerId).
 
 add(_State, Player) ->

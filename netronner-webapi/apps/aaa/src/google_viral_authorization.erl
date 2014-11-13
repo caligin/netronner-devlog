@@ -19,7 +19,7 @@ is_infected(GoogleId) ->
 infect(GoogleId) ->
     gen_server:call(?MODULE, {infect, GoogleId}).
 
-init(Args) ->
+init(_Args) ->
     {ok, sets:from_list([?SEED])}.
 
 handle_call({is_infected, GoogleId}, _From, State) ->
