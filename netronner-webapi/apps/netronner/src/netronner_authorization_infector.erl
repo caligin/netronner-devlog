@@ -30,6 +30,6 @@ initialize_infection_list() ->
 scan_timeline_page(none) ->
     ok;
 scan_timeline_page(Page) ->
-    {Prev, Events} = timeline:page(Page),
+    {_Page, Prev, Events} = timeline:page(Page),
     [ google_viral_authorization:infect(GoogleId) || {<<"achievement_award">>, _ , #{<<"player">> := #{<<"id">> := GoogleId}}} <- Events],
     scan_timeline_page(Prev).

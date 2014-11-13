@@ -23,7 +23,7 @@ append(Event) ->
 page(PageIndex) ->
     gen_server:call(?MODULE, {page, PageIndex}).
 
-page_to_dto({Prev, Events}) ->
+page_to_dto({_Page, Prev, Events}) ->
     #{
         <<"previous">> => Prev,
         <<"events">> => lists:map(fun event:to_dto/1, Events)

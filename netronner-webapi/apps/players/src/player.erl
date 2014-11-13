@@ -21,7 +21,7 @@ name({_, Name, _, _}) ->
 image_url({_, _, ImageUrl, _}) ->
     ImageUrl.
 
--spec achievements(player()) -> [achievements:achievement()].
+-spec achievements(player()) -> [achievement:achievement()].
 achievements({_, _, _, Achievements}) ->
     Achievements.
 
