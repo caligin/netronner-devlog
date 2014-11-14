@@ -109,3 +109,5 @@ start:
 	rel/$(NODE)/bin/$(NODE) start
 console:
 	rel/${NODE}/bin/${NODE} console ${ARGS}
+container-build:
+	docker run -v $$(readlink -f .):/netronner-src -ti --rm caligin/debian-erlang /bin/bash -c "cd /netronner-src && make -f Makefile.container"

@@ -1,0 +1,31 @@
+.PHONY: all build
+
+all: build
+
+/netronner-build:
+	mkdir /netronner-build
+
+/netronner-build/apps/: /netronner-build
+	cp -r /netronner-src/apps/ /netronner-build/
+
+/netronner-build/rebar.config: /netronner-build
+	cp /netronner-src/rebar.config /netronner-build/
+
+/netronner-build/Makefile: /netronner-build
+	cp /netronner-src/Makefile /netronner-build/
+
+/netronner-build/rel/: /netronner-build
+	mkdir /netronner-build/rel/
+
+/netronner-build/rel/files: /netronner-build/rel/
+	cp -r /netronner-src/rel/files /netronner-build/rel/
+
+/netronner-build/rel/reltool.config: /netronner-build/rel/
+	cp /netronner-src/rel/reltool.config /netronner-build/rel/
+
+build: /netronner-build/rel/reltool.config /netronner-build/rel/files /netronner-build/Makefile /netronner-build/rebar.config /netronner-build/apps/
+	cd /netronner-build && \
+	$(MAKE) clean && \
+	$(MAKE) all && \
+	$(MAKE) tarball
+	cp /netronner-build/rel/netronner.tar.gz /netronner-src/
