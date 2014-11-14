@@ -19,7 +19,7 @@ start_link() ->
 append(Event) ->
     gen_server:call(?MODULE, {append, Event}).
 
--spec page(integer() | latest) -> page().
+-spec page(integer() | latest | none) -> page().
 page(PageIndex) ->
     gen_server:call(?MODULE, {page, PageIndex}).
 
@@ -79,6 +79,7 @@ next_prev(none) ->
 next_prev(Prev) ->
     Prev + 1.
 
+-spec page(any(), integer() | latest | none) -> page().
 page(_State, none) ->
     throw(notfound);
 page(_State, latest) ->
@@ -88,8 +89,8 @@ page(_State, PageIndex) when is_integer(PageIndex) ->
 
 page_or_empty(PageTerm) ->
     case dets:lookup(events, PageTerm) of
-        [{_Page, Prev, Events}] -> {Prev, Events};
-        [] -> {none, []}
+        [Page] -> Page;
+        [] -> {latest, none, []}
     end.
 
 -spec fetch_or_make_latest() -> page().
