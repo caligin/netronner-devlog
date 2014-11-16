@@ -15,7 +15,7 @@ content_types_provided(Req, Repository) ->
 timeline_page_json(Req, Repository) ->
     PageIndex = page_index_binding(Req),
     Page = timeline_page_to_dto(timeline:page(PageIndex, Repository)),
-    {<<"nocontent">>, Req, Repository}.
+    {Page, Req, Repository}.
 
 
 page_index_binding(Req) ->
