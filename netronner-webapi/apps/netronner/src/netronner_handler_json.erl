@@ -12,11 +12,6 @@ init(_Type, Req, [Feature, Action]) ->
     {Method, _} = cowboy_req:method(Req),
     {ok, Req, {Feature, Action, Method}}.
 
-handle(Req, {timeline, page, <<"GET">>}) ->
-    PageIndex = page_index_binding(Req),
-    Page = timeline_page_to_dto(timeline:page(PageIndex)),
-    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Page), Req),
-    {ok, Req2, undefined};
 handle(Req, {players, load, <<"GET">>}) ->
     {PlayerId, _} = cowboy_req:binding(player_id, Req),
     Player = player_to_json(players:load(PlayerId)),
@@ -64,13 +59,6 @@ terminate(_Reason, _Req, _State) ->
     ok.
 
 
-page_index_binding(Req) ->
-    {PageIndexBin, _} = cowboy_req:binding(page, Req),
-    case PageIndexBin of
-        <<"latest">> -> latest;
-        _ -> binary_to_integer(PageIndexBin)
-    end.
-
 cors_allow(Methods, Headers) ->
     [
         {<<"access-control-allow-methods">>, list_to_binary(string:join(Methods, ", "))},
@@ -99,17 +87,3 @@ player_to_json({Id, Name, ImageUrl, Achievements}) ->
             <<"achievements">> => lists:map(fun achievement_to_map/1, Achievements)
         },
     jiffy:encode(AsMap).
-
-timeline_page_to_dto({_Page, Prev, Events}) ->
-    #{
-        <<"previous">> => Prev,
-        <<"events">> => lists:map(fun event_to_dto/1, Events)
-    }.
-
-event_to_dto(Event) ->
-    {Mega, Secs, Micro} = event:ts(event),
-    #{
-        <<"type">> => event:type(Event),
-        <<"timestamp">> => [Mega, Secs, Micro],
-        <<"data">> => event:data(Event)
-    }.
