@@ -9,13 +9,13 @@ new(Type, Data) ->
     {Type, os:timestamp(), Data}.
 
 -spec type(event()) -> binary().
-type({Type, _Ts, _D}) ->
+type({Type, _, _}) ->
     Type.
 
 -spec ts(event()) -> erlang:timestamp().
-ts({_T, Timestamp, _D}) ->
+ts({_, Timestamp, _}) ->
     Timestamp.
 
 -spec data(event()) -> term().
-data({_T, _Ts, Data}) ->
+data({_, _, Data}) ->
     Data.

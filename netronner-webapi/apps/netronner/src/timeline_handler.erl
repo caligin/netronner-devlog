@@ -15,7 +15,7 @@ content_types_provided(Req, Repository) ->
 timeline_page_json(Req, Repository) ->
     PageIndex = page_index_binding(Req),
     Page = timeline_page_to_dto(timeline:page(PageIndex, Repository)),
-    {jiffy:encode(Page), Req, Repository}.
+    {<<"nocontent">>, Req, Repository}.
 
 
 page_index_binding(Req) ->
@@ -32,7 +32,7 @@ timeline_page_to_dto({_Page, Prev, Events}) ->
     }.
 
 event_to_dto(Event) ->
-    {Mega, Secs, Micro} = event:ts(event),
+    {Mega, Secs, Micro} = event:ts(Event),
     #{
         <<"type">> => event:type(Event),
         <<"timestamp">> => [Mega, Secs, Micro],
