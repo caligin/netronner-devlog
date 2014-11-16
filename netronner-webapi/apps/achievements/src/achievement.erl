@@ -1,12 +1,12 @@
 -module(achievement).
 
--export([make/3, name/1, description/1, icon/1, eq/2]).
+-export([new/3, name/1, description/1, icon/1, eq/2]).
 
 -type achievement() :: { Name::binary(), Description::binary(), Icon::binary()}.
 -export_type([achievement/0]).
 
--spec make(binary(), binary(), binary()) -> achievement().
-make(Name, Description, Icon) ->
+-spec new(binary(), binary(), binary()) -> achievement().
+new(Name, Description, Icon) ->
     {Name, Description, Icon}.
 
 -spec name(achievement()) -> binary().

@@ -34,22 +34,6 @@ handle(Req, {players, award_achievement, <<"POST">>}) ->
             {ok, Req2} = cowboy_req:reply(Status, ?HEADERS ++ Headers, Req),
             {ok, Req2, undefined}
         end;
-handle(Req, {achievements, list_or_set, <<"GET">>}) ->
-    Achievements = achievements:list(),
-    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, achievements_to_json(Achievements), Req),
-    {ok, Req2, undefined};
-handle(Req, {achievements, list_or_set, <<"PUT">>}) ->
-    case gen_aaa:chain(administrative, Req) of
-        {ok, _} ->
-            {ok, Data, Req2} = cowboy_req:body(Req),
-            Achievements = achievements:from_json(Data),
-            ok = achievements:set(Achievements),
-            {ok, Req3} = cowboy_req:reply(200, ?HEADERS, Req2),
-            {ok, Req3, undefined};
-        {error, Status, Headers} ->
-            {ok, Req2} = cowboy_req:reply(Status, ?HEADERS ++ Headers, Req),
-            {ok, Req2, undefined}
-        end;
 handle(Req, {_, _, Method }) ->
     {ok, Req2} = cowboy_req:reply(405, ?HEADERS, jiffy:encode({[{unsupported_method, Method}]}), Req),
     {ok, Req2, undefined}.
@@ -65,18 +49,6 @@ cors_allow(Methods, Headers) ->
         {<<"access-control-allow-headers">>, list_to_binary(string:join([?DEFAULT_CORS_ALLOWED_HEADERS | Headers], ", "))}
     ].
 
--spec achievement_to_map(achievement:achievement()) -> map().
-achievement_to_map({Name, Description, Icon}) -> 
-    #{
-        <<"name">> => Name,
-        <<"description">> => Description,
-        <<"icon">> => Icon
-    }.
-
--spec achievements_to_json([achievement:achievement()]) -> binary().
-achievements_to_json(Achievements) when is_list(Achievements) ->
-    AsMaps = lists:map(fun achievement_to_map/1, Achievements),
-    jiffy:encode(AsMaps).
 
 -spec player_to_json(player:player()) -> binary().
 player_to_json({Id, Name, ImageUrl, Achievements}) ->
@@ -87,3 +59,11 @@ player_to_json({Id, Name, ImageUrl, Achievements}) ->
             <<"achievements">> => lists:map(fun achievement_to_map/1, Achievements)
         },
     jiffy:encode(AsMap).
+
+-spec achievement_to_map(achievement:achievement()) -> map().
+achievement_to_map({Name, Description, Icon}) -> 
+    #{
+        <<"name">> => Name,
+        <<"description">> => Description,
+        <<"icon">> => Icon
+    }.

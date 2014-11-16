@@ -3,7 +3,6 @@
     {vsn, "1"},
     {registered, [achievements_application, achievements_supervisor, achievements]},
     {applications, [kernel, stdlib]},
-    {modules, [achievements_application, achievements_supervisor, achievement, achievements]},
-    {mod, { achievements_application, []}},
+    {modules, [achievement, achievements]},
     {env, []}
 ]}.

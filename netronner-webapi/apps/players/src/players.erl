@@ -63,7 +63,8 @@ add(_State, Player) ->
 
 award_achievement(_State, PlayerId, AchievementName) ->
     OldPlayer = ensure_player(PlayerId),
-    {ok, Achievement} = achievements:load(AchievementName),
+    % FIXME: this should not be opened but must have the achievements repo as state
+    {ok, Achievement} = achievements:load(AchievementName, achievements:open()),
     UpdatedPlayer = player:with_achievement(Achievement, OldPlayer),
     dets:insert(players, UpdatedPlayer),
     players_events:notify(players_events:achievement_award(UpdatedPlayer, Achievement)),
