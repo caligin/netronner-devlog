@@ -1,65 +1,22 @@
 -module(timeline).
-
--behaviour(gen_server).
--export([append/1, page/1]).
--export([page_to_dto/1]).
--export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
--export([start_link/0]).
-
+-export([
+    open/0,
+    append/2,
+    page/2,
+    close/1
+    ]).
 -define(PAGE_SIZE, 20).
 
 -type page() :: { Page::integer() | latest, Previous::integer() | none, [event:event()]}.
 
-
--spec start_link() -> {ok,pid()} | ignore | {error, {already_started, pid()} | term()}.
-start_link() ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
-
--spec append(event:event()) -> ok.
-append(Event) ->
-    gen_server:call(?MODULE, {append, Event}).
-
--spec page(integer() | latest | none) -> page().
-page(PageIndex) ->
-    gen_server:call(?MODULE, {page, PageIndex}).
-
-page_to_dto({_Page, Prev, Events}) ->
-    #{
-        <<"previous">> => Prev,
-        <<"events">> => lists:map(fun event:to_dto/1, Events)
-    }.
-
-init([]) ->
+-spec open() -> {ok, RepoHandle::atom()}.
+open() ->
     %% TODO: configurable file name
-    dets:open_file(events, []),
-    {ok, new_state()}.
+    dets:open_file(events, []).
 
-handle_cast(_Msg, State) ->
-    {noreply, State}.
-
-handle_call({append, Event}, _From, State) ->
-    {reply, append(State, Event), State};
-handle_call({page, PageIndex}, _From, State) ->
-    {reply, page(State, PageIndex), State};
-handle_call(_Msg, _From, State) ->
-    {reply, {error, badreqeust}, State}.
-
-handle_info(_Info, State) ->
-    {noreply, State}.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
-
-terminate(_Reason, _State) ->
-    ok = dets:close(events),
-    ok.
-
-
-new_state() ->
-    #{}.
-
-append(_State, Event) ->
-    {latest, Prev, Events} = fetch_or_make_latest(),
+-spec append(event:event(), RepoHandle::atom()) -> ok.
+append(Event, RepoHandle) ->
+    {latest, Prev, Events} = fetch_or_make_latest(RepoHandle),
     EventsCount = length(Events),
     if
         EventsCount < ?PAGE_SIZE ->
@@ -79,26 +36,30 @@ next_prev(none) ->
 next_prev(Prev) ->
     Prev + 1.
 
--spec page(any(), integer() | latest | none) -> page().
-page(_State, none) ->
+-spec page(integer() | latest | none, RepoHandle::atom()) -> page().
+page(none, _RepoHandle) ->
     throw(notfound);
-page(_State, latest) ->
-    page_or_empty(latest);
-page(_State, PageIndex) when is_integer(PageIndex) ->
-    page_or_empty(PageIndex).
+page(latest, RepoHandle) ->
+    page_or_empty(latest, RepoHandle);
+page(PageIndex, RepoHandle) when is_integer(PageIndex) ->
+    page_or_empty(PageIndex, RepoHandle).
 
-page_or_empty(PageTerm) ->
-    case dets:lookup(events, PageTerm) of
+page_or_empty(PageTerm, RepoHandle) ->
+    case dets:lookup(RepoHandle, PageTerm) of
         [Page] -> Page;
         [] -> {latest, none, []}
     end.
 
--spec fetch_or_make_latest() -> page().
-fetch_or_make_latest() ->
-    case dets:lookup(events, latest) of
+-spec fetch_or_make_latest(RepoHandle::atom()) -> page().
+fetch_or_make_latest(RepoHandle) ->
+    case dets:lookup(RepoHandle, latest) of
         [Latest] -> Latest;
         [] -> 
             EmptyLatest = {latest, none, []},
-            ok = dets:insert(events, EmptyLatest),
+            ok = dets:insert(RepoHandle, EmptyLatest),
             EmptyLatest
     end.
+
+-spec close(RepoHandle::atom()) -> ok | {error, term()}.
+close(RepoHandle) ->
+    dets:close(RepoHandle).

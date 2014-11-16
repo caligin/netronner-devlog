@@ -9,14 +9,16 @@ start(_StartType, _StartArgs) ->
     Port = application:get_env(netronner, port, 8080),
     Acceptors = application:get_env(netronner, acceptors, 100),
 
-    ok = players_events:add_handler(netronner_events_publisher), 
-    ok = players_events:add_handler(netronner_authorization_infector), 
+    ok = players_events:add_handler(netronner_events_publisher),
+    ok = players_events:add_handler(netronner_authorization_infector),
 
-    spawn(fun netronner_authorization_infector:initialize_infection_list/0),
+    {TimelineRepo} = open_repositories(),
+
+    spawn(fun() -> netronner_authorization_infector:initialize_infection_list(TimelineRepo) end),
 
     Dispatcher = cowboy_router:compile([
         {'_', [
-            {"/api/timeline/:page", netronner_handler_json, [timeline, page]},
+            {"/api/timeline/:page", netronner_handler_json, [TimelineRepo]},
             {"/api/players/:player_id", netronner_handler_json, [players, load]},
             {"/api/players/:player_id/award_achievement", netronner_handler_json, [players, award_achievement]},
             {"/api/achievements", netronner_handler_json, [achievements, list_or_set]}
@@ -38,3 +40,7 @@ start_cowboy(https, Port, Acceptors, Dispatcher) ->
 
 start_cowboy(UnsupportedProtocol, _, _, _) ->
     throw({unsupported_protocol, UnsupportedProtocol}).
+
+open_repositories() ->
+    {ok, Timeline} = timeline:open(),
+    {Timeline}.

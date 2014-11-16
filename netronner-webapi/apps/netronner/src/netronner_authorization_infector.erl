@@ -2,7 +2,7 @@
 
 -behaviour(gen_event).
 -export([init/1, handle_event/2, handle_info/2, handle_call/2, code_change/3, terminate/2]).
--export([initialize_infection_list/0]).
+-export([initialize_infection_list/1]).
 
 init([]) ->
     {ok, []}.
@@ -24,12 +24,12 @@ code_change(_OldVsn, State, _Extra) ->
 terminate(_Arg, _State) ->
     ok.
 
-initialize_infection_list() ->
-    scan_timeline_page(latest).
+initialize_infection_list(TimelineRepo) ->
+    scan_timeline_page(latest, TimelineRepo).
 
-scan_timeline_page(none) ->
+scan_timeline_page(none, _TimelineRepo) ->
     ok;
-scan_timeline_page(Page) ->
-    {_Page, Prev, Events} = timeline:page(Page),
+scan_timeline_page(Page, TimelineRepo) ->
+    {_Page, Prev, Events} = timeline:page(Page, TimelineRepo),
     [ google_viral_authorization:infect(GoogleId) || {<<"achievement_award">>, _ , #{<<"player">> := #{<<"id">> := GoogleId}}} <- Events],
-    scan_timeline_page(Prev).
+    scan_timeline_page(Prev, TimelineRepo).

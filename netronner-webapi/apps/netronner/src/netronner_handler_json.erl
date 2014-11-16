@@ -14,7 +14,7 @@ init(_Type, Req, [Feature, Action]) ->
 
 handle(Req, {timeline, page, <<"GET">>}) ->
     PageIndex = page_index_binding(Req),
-    Page = timeline:page_to_dto(timeline:page(PageIndex)),
+    Page = timeline_page_to_dto(timeline:page(PageIndex)),
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS, jiffy:encode(Page), Req),
     {ok, Req2, undefined};
 handle(Req, {players, load, <<"GET">>}) ->
@@ -100,3 +100,16 @@ player_to_json({Id, Name, ImageUrl, Achievements}) ->
         },
     jiffy:encode(AsMap).
 
+timeline_page_to_dto({_Page, Prev, Events}) ->
+    #{
+        <<"previous">> => Prev,
+        <<"events">> => lists:map(fun event_to_dto/1, Events)
+    }.
+
+event_to_dto(Event) ->
+    {Mega, Secs, Micro} = event:ts(event),
+    #{
+        <<"type">> => event:type(Event),
+        <<"timestamp">> => [Mega, Secs, Micro],
+        <<"data">> => event:data(Event)
+    }.
