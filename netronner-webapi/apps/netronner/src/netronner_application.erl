@@ -9,10 +9,10 @@ start(_StartType, _StartArgs) ->
     Port = application:get_env(netronner, port, 8080),
     Acceptors = application:get_env(netronner, acceptors, 100),
 
-    ok = players_events:add_handler(netronner_events_publisher),
-    ok = players_events:add_handler(netronner_authorization_infector),
-
     {TimelineRepo} = open_repositories(),
+
+    ok = players_events:add_handler(netronner_events_publisher, [TimelineRepo]),
+    ok = players_events:add_handler(netronner_authorization_infector),
 
     spawn(fun() -> netronner_authorization_infector:initialize_infection_list(TimelineRepo) end),
 
