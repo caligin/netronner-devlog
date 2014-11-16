@@ -12,11 +12,6 @@ init(_Type, Req, [Feature, Action]) ->
     {Method, _} = cowboy_req:method(Req),
     {ok, Req, {Feature, Action, Method}}.
 
-handle(Req, {players, load, <<"GET">>}) ->
-    {PlayerId, _} = cowboy_req:binding(player_id, Req),
-    Player = player_to_json(players:load(PlayerId)),
-    {ok, Req2} = cowboy_req:reply(200, ?HEADERS, Player, Req),
-    {ok, Req2, undefined};
 handle(Req, {players, award_achievement, <<"OPTIONS">>}) -> %% CORS preflight
     CorsHeaders = cors_allow(["POST"],["Authorization"]),
     {ok, Req2} = cowboy_req:reply(200, ?HEADERS ++ CorsHeaders, Req),
@@ -48,22 +43,3 @@ cors_allow(Methods, Headers) ->
         {<<"access-control-allow-methods">>, list_to_binary(string:join(Methods, ", "))},
         {<<"access-control-allow-headers">>, list_to_binary(string:join([?DEFAULT_CORS_ALLOWED_HEADERS | Headers], ", "))}
     ].
-
-
--spec player_to_json(player:player()) -> binary().
-player_to_json({Id, Name, ImageUrl, Achievements}) ->
-    AsMap = #{
-            <<"id">> => Id,
-            <<"name">> => Name,
-            <<"imageUrl">> => ImageUrl,
-            <<"achievements">> => lists:map(fun achievement_to_map/1, Achievements)
-        },
-    jiffy:encode(AsMap).
-
--spec achievement_to_map(achievement:achievement()) -> map().
-achievement_to_map({Name, Description, Icon}) -> 
-    #{
-        <<"name">> => Name,
-        <<"description">> => Description,
-        <<"icon">> => Icon
-    }.

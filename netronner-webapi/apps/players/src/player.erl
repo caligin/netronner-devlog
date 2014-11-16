@@ -1,12 +1,12 @@
 -module(player).
--export([make/3, id/1, name/1, image_url/1, achievements/1, with_achievement/2]).
+-export([new/3, id/1, name/1, image_url/1, achievements/1, with_achievement/2]).
 
 -type player() :: {Id::binary(), Name::binary(), ImageUrl::binary(), Achievements::[achievement:achievement()]}.
 -export_type([player/0]).
 
 
--spec make(binary(), binary(), binary()) -> player().
-make(Id, Name, ImageUrl) ->
+-spec new(binary(), binary(), binary()) -> player().
+new(Id, Name, ImageUrl) ->
     {Id, Name,  ImageUrl, []}.
 
 -spec id(player()) -> binary().

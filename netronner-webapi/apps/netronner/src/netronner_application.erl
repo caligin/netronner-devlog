@@ -9,7 +9,7 @@ start(_StartType, _StartArgs) ->
     Port = application:get_env(netronner, port, 8080),
     Acceptors = application:get_env(netronner, acceptors, 100),
 
-    {TimelineRepo, AchievementsRepo} = open_repositories(),
+    {TimelineRepo, AchievementsRepo, PlayersRepo} = open_repositories(),
 
     ok = players_events:add_handler(netronner_events_publisher, [TimelineRepo]),
     ok = players_events:add_handler(netronner_authorization_infector),
@@ -19,7 +19,7 @@ start(_StartType, _StartArgs) ->
     Dispatcher = cowboy_router:compile([
         {'_', [
             {"/api/timeline/:page", timeline_handler, [TimelineRepo]},
-            {"/api/players/:player_id", netronner_handler_json, [players, load]},
+            {"/api/players/:player_id", player_handler, [PlayersRepo]},
             {"/api/players/:player_id/award_achievement", netronner_handler_json, [players, award_achievement]},
             {"/api/achievements", achievements_handler, [AchievementsRepo]}
         ]}
@@ -44,4 +44,5 @@ start_cowboy(UnsupportedProtocol, _, _, _) ->
 open_repositories() ->
     {ok, Timeline} = timeline:open(),
     {ok, Achievements} = achievements:open(),
-    {Timeline, Achievements}.
+    {ok, Players} = players:open(),
+    {Timeline, Achievements, Players}.

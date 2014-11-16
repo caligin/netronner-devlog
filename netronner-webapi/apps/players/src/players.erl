@@ -1,21 +1,19 @@
 -module(players).
 
 -behaviour(gen_server).
--export([load/1, add/1, award_achievement/2]).
+-export([
+    open/0,
+    load/2,
+    merge/2,
+    close/1
+    ]).
+-export([award_achievement/2]).
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, code_change/3, terminate/2]).
 -export([start_link/0]).
 
 -spec start_link() -> {ok,pid()} | ignore | {error, {already_started, pid()} | term()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
-
--spec load(binary()) -> player:player().
-load(PlayerId) ->
-    gen_server:call(?MODULE, {load, PlayerId}).
-
--spec add(player:player()) -> ok.
-add(Player) ->
-    gen_server:call(?MODULE, {add, Player}).
 
 -spec award_achievement(PlayerId::binary(), AchievementName::binary()) -> ok.
 award_achievement(PlayerId, AchievementName) ->
@@ -25,16 +23,11 @@ award_achievement(PlayerId, AchievementName) ->
 init([]) ->
     %%TODO: configurable filename
     dets:open_file(players,[]),
-    {ok, new_state()}.
+    {ok, #{}}.
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_call({load, PlayerId}, _From, State) ->
-    {reply, load(State, PlayerId), State};
-handle_call({add, Player}, _From, State) ->
-    ok = add(State, Player),
-    {reply, ok, State};
 handle_call({award_achievement, PlayerId, AchievementName}, _From, State) ->
     ok = award_achievement(State, PlayerId, AchievementName),
     {reply, ok, State};
@@ -51,16 +44,28 @@ terminate(_Reason, _State) ->
     ok = dets:close(players),
     ok.
 
+-spec open() -> {ok, RepoHandle::atom()}.
+open() ->
+    dets:open_file(players,[]).
 
-new_state() ->
-    #{}.
+-spec load(PlayerId::binary(), RepoHandle::atom()) -> {ok, player:player()} | notfound.
+load(PlayerId, RepoHandle) ->
+    case dets:lookup(RepoHandle, PlayerId) of
+        [Player] -> {ok, Player};
+        [] -> notfound
+    end.
 
-load(_State, PlayerId) ->
-    dets:lookup(players, PlayerId).
+-spec merge(player:player(), RepoHandle::atom()) -> ok.
+merge(Player, RepoHandle) ->
+    ok = dets:insert(RepoHandle, Player),
+    ok.
 
-add(_State, Player) ->
-    dets:insert(players, Player).
+-spec close(RepoHandle::atom()) -> ok.
+close(RepoHandle) ->
+    ok = dets:close(RepoHandle).
 
+
+%-spec award_achievement(PlayerId::binary(), achievement:achievement(), RepoHandle::atom()).
 award_achievement(_State, PlayerId, AchievementName) ->
     OldPlayer = ensure_player(PlayerId),
     % FIXME: this should not be opened but must have the achievements repo as state
@@ -84,4 +89,4 @@ ensure_player(PlayerId) ->
 
 -spec user_to_player(google:user()) -> player:player().
 user_to_player(GoogleUser) ->
-    player:make(google:user_id(GoogleUser), google:user_name(GoogleUser), google:user_image_url(GoogleUser)). 
+    player:new(google:user_id(GoogleUser), google:user_name(GoogleUser), google:user_image_url(GoogleUser)). 
