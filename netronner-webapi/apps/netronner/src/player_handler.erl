@@ -12,10 +12,12 @@ init(_Transport, Req, [Repository]) ->
 
 resource_exists(Req, Repository) ->
     {PlayerId, _} = cowboy_req:binding(player_id, Req),
-    case players:load(PlayerId, Repository) of
+    Exists = case players:load(PlayerId, Repository) of
         {ok, _} -> true;
         notfound -> false
-    end.
+    end,
+    {Exists, Req, Repository}.
+
 
 content_types_provided(Req, Repository) ->
     {[{<<"application/json">>, get_player_json}], Req, Repository}.

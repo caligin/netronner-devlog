@@ -14,13 +14,14 @@ init(_Transport, Req, [Repository]) ->
     {upgrade, protocol, cowboy_rest, Req2, Repository}.
 
 allowed_methods(Req, Repository) ->
-    [<<"GET">>, <<"PUT">>, <<"HEAD">>, <<"OPTIONS">>].
+    {[<<"GET">>, <<"PUT">>, <<"HEAD">>, <<"OPTIONS">>], Req, Repository}.
 
 forbidden(Req, Repository) ->
-    case cowboy_req:method(Req) of
+    Forbidden = case cowboy_req:method(Req) of
         {<<"PUT">>, _} -> not request_is_administrative(Req);
         {_OtherMethod, _} -> false
-    end.
+    end,
+    {Forbidden, Req, Repository}.
 
 content_types_provided(Req, Repository) ->
     {[{<<"application/json">>, get_achievements_json}], Req, Repository}.
@@ -36,7 +37,7 @@ put_achievements_json(Req, Repository) ->
     {ok, Body, Req2} = cowboy_req:body(Req),
     NewAchievements = decode_json(Body),
     ok = achievements:set(NewAchievements, Repository),
-    true.
+    {true, Req, Repository}.
 
 %% private
 
