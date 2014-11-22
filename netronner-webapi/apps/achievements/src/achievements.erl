@@ -21,7 +21,7 @@ set(NewAchievements, RepoHandle) ->
     ok = dets:init_table(RepoHandle, fun(_) -> {NewAchievements, fun(_) -> end_of_input end} end),
     ok.
 
--spec load(AchievementName::binary(), RepoHandle::atom()) -> {ok, achievement} | notfound.
+-spec load(AchievementName::binary(), RepoHandle::atom()) -> {ok, achievement:achievement()} | notfound.
 load(AchievementName, RepoHandle) ->
     case dets:lookup(RepoHandle, AchievementName) of
         [Achievement] -> {ok, Achievement};
