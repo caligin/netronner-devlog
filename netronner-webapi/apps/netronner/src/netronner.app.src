@@ -5,9 +5,11 @@
     {applications, [ kernel, stdlib, crypto, public_key, ssl, cowboy, jiffy, players, achievements, timeline, aaa ]},
     {mod, { netronner_application, []}},
     {modules, [
-        netronner_application, 
-        netronner_handler_json,
+        achievements_handler,
+        netronner_application,
         netronner_events_publisher,
+        player_achievements_handler,
+        player_handler,
         timeline_handler
     ]},
     {env, [
