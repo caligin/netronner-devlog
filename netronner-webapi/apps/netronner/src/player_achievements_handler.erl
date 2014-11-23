@@ -2,6 +2,7 @@
 
 -export([
     init/3,
+    rest_init/2,
     allowed_methods/2,
     is_authorized/2,
     options/2,
@@ -14,6 +15,9 @@
 init(_Transport, Req, [_PlayersRepository, _AchievementsRepository, _EventBusRef] = Repositories) ->
     Req2 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req),
     {upgrade, protocol, cowboy_rest, Req2, Repositories}.
+
+rest_init(Req, Repositories) ->
+    {ok, Req, Repositories}.    
 
 allowed_methods(Req, Repositories) ->
     {[<<"POST">>, <<"OPTIONS">>], Req, Repositories}.

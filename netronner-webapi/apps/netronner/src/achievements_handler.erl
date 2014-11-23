@@ -1,6 +1,7 @@
 -module(achievements_handler).
 -export([
     init/3,
+    rest_init/2,
     allowed_methods/2,
     forbidden/2,
     content_types_provided/2,
@@ -12,6 +13,9 @@
 init(_Transport, Req, [Repository]) ->
     Req2 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req),
     {upgrade, protocol, cowboy_rest, Req2, Repository}.
+
+rest_init(Req, Repository) ->
+    {ok, Req, Repository}.
 
 allowed_methods(Req, Repository) ->
     {[<<"GET">>, <<"PUT">>, <<"HEAD">>, <<"OPTIONS">>], Req, Repository}.

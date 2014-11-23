@@ -1,6 +1,7 @@
 -module(player_handler).
 -export([
     init/3,
+    rest_init/2,
     resource_exists/2,
     content_types_provided/2,
     get_player_json/2
@@ -9,6 +10,9 @@
 init(_Transport, Req, [Repository]) ->
     Req2 = cowboy_req:set_resp_header(<<"access-control-allow-origin">>, <<"*">>, Req),
     {upgrade, protocol, cowboy_rest, Req2, Repository}.
+
+rest_init(Req, Repository) ->
+    {ok, Req, Repository}.    
 
 resource_exists(Req, Repository) ->
     {PlayerId, _} = cowboy_req:binding(player_id, Req),
