@@ -13,6 +13,7 @@
         timeline_handler
     ]},
     {env, [
-        {google_api_key, <<"KEY HERE">>}
+        {google_api_key, <<"KEY HERE">>},
+        {db_base_path, "/tmp"}
     ]}
  ]}.

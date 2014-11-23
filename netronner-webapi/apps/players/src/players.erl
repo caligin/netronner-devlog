@@ -2,6 +2,7 @@
 
 -export([
     open/0,
+    open/1,
     load/2,
     add/2,
     award_achievement/3,
@@ -10,7 +11,11 @@
 
 -spec open() -> {ok, RepoHandle::atom()}.
 open() ->
-    dets:open_file(players,[]).
+    dets:open_file(?MODULE,[]).
+
+-spec open(BasePath::string()) -> {ok, RepoHandle::atom()}.
+open(BasePath) ->
+    dets:open_file(?MODULE,[{file, [BasePath, $/, atom_to_list(?MODULE)]}]).
 
 -spec load(PlayerId::binary(), RepoHandle::atom()) -> {ok, player:player()} | notfound.
 load(PlayerId, RepoHandle) ->

@@ -1,6 +1,7 @@
 -module(timeline).
 -export([
     open/0,
+    open/1,
     append/2,
     page/2,
     close/1
@@ -11,8 +12,11 @@
 
 -spec open() -> {ok, RepoHandle::atom()}.
 open() ->
-    %% TODO: configurable file name
-    dets:open_file(events, []).
+    dets:open_file(?MODULE,[]).
+
+-spec open(BasePath::string()) -> {ok, RepoHandle::atom()}.
+open(BasePath) ->
+    dets:open_file(?MODULE,[{file, [BasePath, $/, atom_to_list(?MODULE)]}]).
 
 -spec append(event:event(), RepoHandle::atom()) -> ok.
 append(Event, RepoHandle) ->

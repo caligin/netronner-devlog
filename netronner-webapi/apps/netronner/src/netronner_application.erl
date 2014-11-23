@@ -56,9 +56,10 @@ start_cowboy(UnsupportedProtocol, _, _, _) ->
     throw({unsupported_protocol, UnsupportedProtocol}).
 
 open_repositories() ->
-    {ok, Timeline} = timeline:open(),
-    {ok, Achievements} = achievements:open(),
-    {ok, Players} = players:open(),
+    {ok, BasePath} = application:get_env(db_base_path),
+    {ok, Timeline} = timeline:open(BasePath),
+    {ok, Achievements} = achievements:open(BasePath),
+    {ok, Players} = players:open(BasePath),
     {Timeline, Achievements, Players}.
 
 start_link_supervisor() ->
