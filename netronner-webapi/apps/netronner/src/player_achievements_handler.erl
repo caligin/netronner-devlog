@@ -42,7 +42,7 @@ resource_exists(Req, [PlayersRepository | _] = Repositories) ->
         {ok, _} ->
             true;
         notfound ->
-            ApiKey = google:api_key_make(element(2, application:get_env(google_api_key))),
+            ApiKey = google:api_key_make(element(2, application:get_env(netronner, google_api_key))),
             google:user_exists(ApiKey, PlayerId)
     end,
     {Exists, Req, Repositories}.
@@ -111,7 +111,7 @@ award_achievement(PlayerId, Achievement, PlayersRepository) ->
     players:award_achievement(PlayerId, Achievement, PlayersRepository).
 
 add_player_from_google_info(PlayerId, PlayersRepository) ->
-    ApiKey = google:api_key_make(element(2, application:get_env(google_api_key))),
+    ApiKey = google:api_key_make(element(2, application:get_env(netronner, google_api_key))),
     GoogleUser = google:user_profile(ApiKey, PlayerId),
     Player = user_to_player(GoogleUser),
     players:add(Player, PlayersRepository).
