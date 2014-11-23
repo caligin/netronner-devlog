@@ -1,4 +1,4 @@
-.PHONY: clean template run
+.PHONY: clean target/site template run
 
 all: template
 
