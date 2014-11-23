@@ -229,12 +229,12 @@
                 $('#award_window button.award').click(function(e){
                     var playerId = playersCombo.val();
                     var achievement = achievementsCombo.val();
-                    netronner.webapi.request('players/{0}/award_achievement'.format(playerId),{
+                    netronner.webapi.request('players/{0}/achievements'.format(playerId),{
                         type: "POST",
-                        contentType: 'application/x-www-form-urlencoded',
-                        data: {
-                            achievement: achievement
-                        },
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            name: achievement
+                        }),
                         headers: {
                             Authorization: 'Bearer {0}'.format(netronner.data.user.accessToken)
                         },
