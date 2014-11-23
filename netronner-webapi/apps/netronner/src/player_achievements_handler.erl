@@ -64,10 +64,15 @@ award_achievement_json(Req, [PlayersRepository, AchievementsRepository, EventBus
                 notfound ->
                     false;
                 {ok, Achievement} ->
-                    ok = award_achievement(PlayerId, Achievement, PlayersRepository),
-                    {ok, Player} = players:load(PlayerId, PlayersRepository),
-                    Event = netronner_events_publisher:achievement_award(Player, Achievement),
-                    gen_event:notify(EventBusRef, Event),
+                    {ok, Added} = award_achievement(PlayerId, Achievement, PlayersRepository),
+                    case Added of
+                        false ->
+                            ok;
+                        true ->
+                            {ok, Player} = players:load(PlayerId, PlayersRepository),
+                            Event = netronner_events_publisher:achievement_award(Player, Achievement),
+                            gen_event:notify(EventBusRef, Event)
+                    end,
                     true
             end
     end,

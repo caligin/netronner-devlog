@@ -27,11 +27,14 @@ add(Player, RepoHandle) ->
     end.
 
 %% TODO: we have a race condition here. I'm going to ignore is for now as the chances of it happening with the initial user base are extremely low.
--spec award_achievement(PlayerId::binary(), achievement:achievement(), RepoHandle::atom()) -> ok.
+%% TODO: this addedd boolean is horrible, it's a fast hack to fix the duplicated event bug. refactor to have a gen_event. This is one of the reasons why
+%%        having apps instead of lib apps is good.
+-spec award_achievement(PlayerId::binary(), achievement:achievement(), RepoHandle::atom()) -> {ok, Added::boolean()}.
 award_achievement(PlayerId, Achievement, RepoHandle) ->
     [OldPlayer] = dets:lookup(RepoHandle, PlayerId),
     UpdatedPlayer = player:with_achievement(Achievement, OldPlayer),
-    ok = dets:insert(RepoHandle, UpdatedPlayer).
+    ok = dets:insert(RepoHandle, UpdatedPlayer),
+    {ok, OldPlayer =/= UpdatedPlayer}.
 
 -spec close(RepoHandle::atom()) -> ok.
 close(RepoHandle) ->
