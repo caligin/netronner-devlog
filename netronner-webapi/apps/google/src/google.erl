@@ -1,7 +1,11 @@
 -module(google).
 -export([user_id/1, user_name/1, user_image_url/1, user_decode/1]).
 -export([access_token_make/1, api_key_make/1, typeof/1, token_value/1, token_to_qs/1]).
--export([validate_access_token/2, user_profile/2]).
+-export([
+    validate_access_token/2,
+    user_profile/2,
+    user_exists/2
+    ]).
 
 -type user() :: #{ id => binary(), display_name => binary(), image_url => binary()}.
 -export_type([user/0]).
@@ -90,10 +94,23 @@ check_token_ownership(BinaryTokenInfo, ClientId) ->
 
 -spec user_profile(token(), binary()) -> user().
 user_profile(Token, UserId) ->
+    Response = user_profile_request(Token, UserId),
+    {{ _ProtoVersion, 200, _StatusMessage }, _Headers, Body} = Response,
+    user_decode(Body).
+
+-spec user_exists(token(), binary()) -> boolean().
+user_exists(Token, UserId) ->
+    Response = user_profile_request(Token, UserId),
+    {{ _ProtoVersion, StatusCode, _StatusMessage }, _Headers, _Body} = Response,
+    case StatusCode of
+        200 -> true;
+        404 -> false
+    end.
+
+user_profile_request(Token, UserId) ->
     {ok, Response} = httpc:request(
         "https://www.googleapis.com/plus/v1/people/"
         ++ binary_to_list(UserId)
         ++ "?"
         ++ binary_to_list(token_to_qs(Token))),
-    {{ _ProtoVersion, 200, _StatusMessage }, _Headers, Body} = Response,
-    user_decode(Body).
+    Response.

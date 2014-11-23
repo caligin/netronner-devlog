@@ -37,7 +37,7 @@ put_achievements_json(Req, Repository) ->
     {ok, Body, Req2} = cowboy_req:body(Req),
     NewAchievements = decode_json(Body),
     ok = achievements:set(NewAchievements, Repository),
-    {true, Req, Repository}.
+    {true, Req2, Repository}.
 
 %% private
 

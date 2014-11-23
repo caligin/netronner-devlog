@@ -23,10 +23,10 @@ chain(AuthModule, Req) ->
             case AuthModule:authorize(Principal) of
                 ok ->
                     {ok, Principal};
-                {error, Status, Headers} = Result-> 
+                {error, _Status, _Headers} = Result-> 
                     Result
             end;        
-        {error, Status, Headers} = Result->
+        {error, _Status, _Headers} = Result->
             Result
     end.
 

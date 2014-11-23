@@ -1,8 +1,16 @@
 -module(netronner_application).
 
 -behaviour(application).
--export([start/2, stop/1]).
+-behaviour(supervisor).
+-export([
+    start/2,
+    stop/1
+    ]).
+-export([
+    init/1
+    ]).
 
+%% application cbs
 start(_StartType, _StartArgs) ->
     register(netronner_application, self()),
     Protocol = application:get_env(netronner, protocol, https),
@@ -11,24 +19,33 @@ start(_StartType, _StartArgs) ->
 
     {TimelineRepo, AchievementsRepo, PlayersRepo} = open_repositories(),
 
-    ok = players_events:add_handler(netronner_events_publisher, [TimelineRepo]),
-    ok = players_events:add_handler(netronner_authorization_infector),
-
     spawn(fun() -> netronner_authorization_infector:initialize_infection_list(TimelineRepo) end),
 
     Dispatcher = cowboy_router:compile([
         {'_', [
             {"/api/timeline/:page", timeline_handler, [TimelineRepo]},
             {"/api/players/:player_id", player_handler, [PlayersRepo]},
-            {"/api/players/:player_id/award_achievement", netronner_handler_json, [players, award_achievement]},
+            {"/api/players/:player_id/achievements", player_achievements_handler, [PlayersRepo, AchievementsRepo, event_bus]},
             {"/api/achievements", achievements_handler, [AchievementsRepo]}
         ]}
     ]),
-    start_cowboy(Protocol, Port, Acceptors, Dispatcher).
+    {ok, _} = start_cowboy(Protocol, Port, Acceptors, Dispatcher),
+    SupervisorRef = start_link_supervisor(),
+    ok = gen_event:add_handler(event_bus, netronner_events_publisher, [TimelineRepo]),
+    ok = gen_event:add_handler(event_bus, netronner_authorization_infector, []),
+    SupervisorRef.
 
 stop(_State) ->
     ok.
 
+%% supervisor cbs
+init([]) ->
+    {ok, {
+        { one_for_one, 5, 100 },
+        [{event_bus, {gen_event, start_link, [{local, event_bus}]}, permanent, 5000, worker, [dynamic]}]
+    }}.
+
+%% private
 start_cowboy(http, Port, Acceptors, Dispatcher) ->
     cowboy:start_http(cowboy_ref, Acceptors, [{port, Port}], [ {env, [{dispatch, Dispatcher}]} ]);
 
@@ -46,3 +63,6 @@ open_repositories() ->
     {ok, Achievements} = achievements:open(),
     {ok, Players} = players:open(),
     {Timeline, Achievements, Players}.
+
+start_link_supervisor() ->
+    supervisor:start_link({local, netronner_supervisor}, ?MODULE, []).

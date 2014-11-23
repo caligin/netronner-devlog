@@ -11,5 +11,7 @@
         netronner_events_publisher,
         timeline_handler
     ]},
-    {env, []}
+    {env, [
+        {google_api_key, <<"KEY HERE">>}
+    ]}
  ]}.

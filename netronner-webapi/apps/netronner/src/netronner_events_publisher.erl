@@ -1,7 +1,17 @@
 -module(netronner_events_publisher).
 
 -behaviour(gen_event).
--export([init/1, handle_event/2, handle_info/2, handle_call/2, code_change/3, terminate/2]).
+-export([
+    init/1,
+    handle_event/2,
+    handle_info/2,
+    handle_call/2,
+    code_change/3,
+    terminate/2
+    ]).
+-export([
+    achievement_award/2
+    ]).
 
 init([TimelineRepo]) ->
     {ok, TimelineRepo}.
@@ -35,3 +45,8 @@ code_change(_OldVsn, State, _Extra) ->
 
 terminate(_Arg, _State) ->
     ok.
+
+%% event ctors
+-spec achievement_award(player:player(), achievement:achievement()) -> {achievement_award, player:player(), achievement:achievement()}.
+achievement_award(Player, Achievement) ->
+    {achievement_award, Player, Achievement}.
