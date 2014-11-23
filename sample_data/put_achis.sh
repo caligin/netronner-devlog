@@ -1,1 +1,1 @@
-curl -X PUT http://localhost:8080/api/achievements --data-binary @achis.json -vvv
+curl -X PUT http://localhost:8080/api/achievements -H 'Content-Type: application/json' --data-binary @achis.json -vvv
