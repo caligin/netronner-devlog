@@ -7,7 +7,6 @@
     {modules, [
         netronner_application, 
         netronner_handler_json,
-        netronner_authorization_infector,
         netronner_events_publisher,
         timeline_handler
     ]},

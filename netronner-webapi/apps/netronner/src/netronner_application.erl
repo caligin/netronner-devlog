@@ -19,8 +19,6 @@ start(_StartType, _StartArgs) ->
 
     {TimelineRepo, AchievementsRepo, PlayersRepo} = open_repositories(),
 
-    spawn(fun() -> netronner_authorization_infector:initialize_infection_list(TimelineRepo) end),
-
     Dispatcher = cowboy_router:compile([
         {'_', [
             {"/api/timeline/:page", timeline_handler, [TimelineRepo]},
@@ -32,7 +30,6 @@ start(_StartType, _StartArgs) ->
     {ok, _} = start_cowboy(Protocol, Port, Acceptors, Dispatcher),
     SupervisorRef = start_link_supervisor(),
     ok = gen_event:add_handler(event_bus, netronner_events_publisher, [TimelineRepo]),
-    ok = gen_event:add_handler(event_bus, netronner_authorization_infector, []),
     SupervisorRef.
 
 stop(_State) ->

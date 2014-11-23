@@ -70,19 +70,24 @@ award_achievement_json(Req, [PlayersRepository, AchievementsRepository, EventBus
     {IsOk, Req2, Repositories}.
 
 %% priv
-is_authorized(Req, _Repositories, <<"POST">>) ->
+is_authorized(Req, [PlayersRepository | _], <<"POST">>) ->
     case google_token:is_authenticated(Req) of
         {false, _} = Res -> Res;
         true -> 
-            is_principal_authorized(google_token:principal(Req))
+            is_principal_authorized(google_token:principal(Req), PlayersRepository)
     end;
 is_authorized(_Req, _Repositories, _) ->
     true.
 
-is_principal_authorized(Principal) ->
-    case google_viral_authorization:is_infected(principal:id(Principal)) of
-        true -> true;
-        false -> {false, <<"Bearer error=\"invalid_token\" error_description=\"unauthorized\"">>}
+is_principal_authorized(Principal, PlayersRepository) ->
+    case principal:id(Principal) of
+        <<"108105329232958151930">> -> %% Caligin Tsukihara's google id.
+            true;
+        PrincipalId ->
+            case players:load(PrincipalId, PlayersRepository) of
+                {ok, _} -> true;
+                notfound -> {false, <<"Bearer error=\"invalid_token\" error_description=\"unauthorized\"">>}
+            end
     end.
 
 -spec decode_json(JsonAchiName::binary()) -> {ok, binary()} | malformed.
