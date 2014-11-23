@@ -1,7 +1,7 @@
 {application, players, [
     {description, "Players management"},
     {vsn, "1"},
-    {registered, [players_application, players_supervisor, players, players_events]},
+    {registered, []},
     {applications, [kernel, stdlib, achievements]},
     {modules, [players, player]},
     {env, []}
