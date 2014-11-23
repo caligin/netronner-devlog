@@ -18,7 +18,7 @@ content_types_provided(Req, Repository) ->
 
 timeline_page_json(Req, Repository) ->
     PageIndex = page_index_binding(Req),
-    Page = timeline_page_to_dto(timeline:page(PageIndex, Repository)),
+    Page = encode_json(timeline:page(PageIndex, Repository)),
     {Page, Req, Repository}.
 
 
@@ -29,11 +29,12 @@ page_index_binding(Req) ->
         _ -> binary_to_integer(PageIndexBin)
     end.
 
-timeline_page_to_dto({_Page, Prev, Events}) ->
-    #{
+encode_json({_Page, Prev, Events}) ->
+    AsMap = #{
         <<"previous">> => Prev,
         <<"events">> => lists:map(fun event_to_dto/1, Events)
-    }.
+    },
+    jiffy:encode(AsMap).
 
 event_to_dto(Event) ->
     {Mega, Secs, Micro} = event:ts(Event),
