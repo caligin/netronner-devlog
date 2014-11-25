@@ -104,7 +104,10 @@ rebuild: distclean deps compile escript dialyzer test
 release:
 	$(REBAR) generate   
 tarball: release
-	@cd rel; tar cvfz netronner.tar.gz netronner_node
+	GIT_COMMIT=$$(git log --pretty=format:'%H' -n 1); \
+	IS_SNAPSHOT=$$(git st --porcelain . | grep -q '' && echo "-SNAPSHOT" || echo ""); \
+	cd rel; \
+	tar cvzf netronner-api-$$GIT_COMMIT$$IS_SNAPSHOT.tar.gz site
 start:
 	rel/$(NODE)/bin/$(NODE) start
 console:
