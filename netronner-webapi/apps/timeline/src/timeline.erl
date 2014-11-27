@@ -26,12 +26,12 @@ append(Event, RepoHandle) ->
         EventsCount < ?PAGE_SIZE ->
             NewLatest = {latest, Prev, [Event | Events]},
             NewNumberedLatest = {next_prev(Prev), Prev, [Event | Events]},
-            ok = dets:insert(events, NewLatest),
-            ok = dets:insert(events, NewNumberedLatest),
+            ok = dets:insert(RepoHandle, NewLatest),
+            ok = dets:insert(RepoHandle, NewNumberedLatest),
             ok;
         true ->
             NewLatest = {latest, next_prev(Prev), [Event]},
-            ok = dets:insert(events, NewLatest),
+            ok = dets:insert(RepoHandle, NewLatest),
             ok
     end.
 

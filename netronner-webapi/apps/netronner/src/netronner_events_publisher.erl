@@ -17,17 +17,15 @@ init([TimelineRepo]) ->
     {ok, TimelineRepo}.
 
 handle_event({achievement_award, Player, Achievement}, TimelineRepo) ->
-    {PlayerId, Name,  ImageUrl, _} = Player,
-    {AchievementName, _, Icon} = Achievement,
     Data = #{
         <<"player">> => #{
-            <<"id">> => PlayerId,
-            <<"name">> => Name,
-            <<"image_url">> => ImageUrl
+            <<"id">> => player:id(Player),
+            <<"name">> => player:name(Player),
+            <<"image_url">> => player:image_url(Player)
         },
         <<"achievement">> => #{
-            <<"name">> => AchievementName,
-            <<"icon">> => Icon
+            <<"name">> => achievement:name(Achievement),
+            <<"icon">> => achievement:icon(Achievement)
         }
     },
     Event = event:new(<<"achievement_award">>, Data),
