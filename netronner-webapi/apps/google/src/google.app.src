@@ -1,7 +1,0 @@
-{application, google, [
-    {description, "Google API module"},
-    {vsn, "1"},
-    {applications, [kernel, stdlib, inets, jiffy]},
-    {modules, [google ]},
-    {env, []}
-]}.

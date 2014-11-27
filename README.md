@@ -1,6 +1,6 @@
-netronner
+netronner-devlog
 =========
 
-minimal webapp to track mahjong achievements/game results
+A pretty random history of my descent into madness and erlang awesomeness.
+The alternate title is "Realization of a Shitty Project, Using Awesome Tech".
 
-[![Build Status](https://travis-ci.org/caligin/netronner.svg)](https://travis-ci.org/caligin/netronner)
