@@ -1,4 +1,4 @@
-# Realization of a shitty project, using awesome tech (Part Idontknow-II)
+# Realization of a shitty project, using awesome tech (Part IV)
 
 Here I am, another update, nothing has been done (almost nothing, we actually started [some experiments](https://github.com/SHWB/pytile) with the [OpenCV libraries](http://opencv.org/) to implement the hand scoring service/Android app).
 

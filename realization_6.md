@@ -1,4 +1,4 @@
-# Realization of a shitty project, using awesome tech (Part Idontknow-IV)
+# Realization of a shitty project, using awesome tech (Part VI)
 
 Here we are again! A lot has happened behind the scenes since the last time, yet so little has changed from a user perspective.
 

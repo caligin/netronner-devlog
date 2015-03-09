@@ -1,10 +1,6 @@
-# Realization of a shitty project, using awesome tech (Part Idontknow)
+# Realization of a shitty project, using awesome tech (Part III)
 
-Ehrm, this is a bit in a hurry. This is not part 2, it's about where I am right now.
-The point is that I don't want to leave thoughts in the air and then struggle to remember them months later when I write like I did for the rest.
-I swear I'll reorder everything once I catch up.
-
-Anyway: I'm at the end of the first development cycle.
+I'm at the end of the first development cycle.
 
 Netronner *should* work.
 
